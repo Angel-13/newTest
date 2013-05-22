@@ -71,7 +71,7 @@ public class Parser {
 		String packageName = this.parsePackage();
 		
 		this.clazz = new Class(this.fileName.split("\\.")[0], new Class("java/lang/Object", null, "java/lang/"), packageName, this.fileDirPath);//array[array.length-1].split("\\.")[0], new Class("java/lang/Object", null));
-		System.out.println(this.clazz.getName());
+		//System.out.println(this.clazz.getName());
 		this.parseImports();
 		this.parseClass();
 		this.lfc.closeReader();
@@ -791,14 +791,10 @@ private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token
 			
 			String filePathClass = f.getClazz().getFilePath() + f.getClazz().getName() + ".class";
 			String filePathJava = f.getClazz().getFilePath() + f.getClazz().getName() + ".java";
-			System.out.println( this.clazz.getFilePath());
-			
 			if(this.checkFile(filePathClass)){
-				System.out.println(filePathClass + "     sdadasdasdasd");
 				ByteReader breader = new ByteReader(filePathClass);
 				fieldFromClassRef = breader.findField(fieldOrMethodName,f.getClazz());
 			}else if(this.checkFile(filePathJava)){
-				System.out.println(filePathClass + "     1111111111111111");
 				Parser pr = new Parser(filePathJava);
 				this.error = pr.getError();
 				if(!this.error){
@@ -1069,14 +1065,11 @@ private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token
 					//TODO read the parent class from class file
 					this.clazz.addUsedClasses(new Class(type.getText(), null, "java/lang/String", "java/lang/String"));
 				}else{
-					System.out.println("Taaaaaaaa");
 					//System.out.println(this.clazz.getFilePath()  + type.getText() + ".java");
 					if(!this.checkFile(this.clazz.getFilePath()  + type.getText() + ".java")){
-						System.out.println("TUKSSSSSS");
 						this.errors.printFileDoesNotExists(type, type.getText());
 						this.error = true;
 					}else{
-					System.out.println("T9999999999999");
 						String dirPath = this.clazz.getFilePath();
 						this.clazz.addUsedClasses(new Class(type.getText(), null, dirPath));
 					}
