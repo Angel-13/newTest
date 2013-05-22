@@ -5,12 +5,10 @@ public class Test1{
 	
 	public static void main(String[] args){
 			try {
-				Parser p = new Parser("./Test.java");
-			}
-			} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			} catch (IOException e) {
+			Parser p = new Parser("./Test.java");
+			}catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
+			
+	} 
 }
