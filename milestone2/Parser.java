@@ -42,7 +42,10 @@ public class Parser {
 	public Parser(String filePath) throws Exception{
 		this.errors = new ErrorsClass();
 		this.lfc = new LookForwardScanner(new Scanner(new LookForwardReader(new FileReader(new File(filePath)))));
-		File f = new File( "./");
+		
+		this.fileName = new File(filePath).getName();
+		this.fileDirPath = new File(filePath).getParent() + "\\";
+		File f = new File(new File(filePath).getParent() );
 		if( f.isDirectory() )
 		{
 			System.out.println("TUKAA");
@@ -58,8 +61,6 @@ public class Parser {
 			System.out.println( f.getAbsolutePath() );
 			System.out.println( f.exists() );
 		}
-		this.fileName = new File(filePath).getName();
-		this.fileDirPath = new File(filePath).getParent() + "\\";
 		this.error = false;
 		this.parseErrors(false);
 		String packageName = this.parsePackage();
