@@ -42,7 +42,21 @@ public class Parser {
 	public Parser(String filePath) throws Exception{
 		this.errors = new ErrorsClass();
 		this.lfc = new LookForwardScanner(new Scanner(new LookForwardReader(new FileReader(new File(filePath)))));
-		
+		File f = new File( filePath );
+		if( f.isDirectory() )
+		{
+			File[] filelist = f.listFiles();
+			for( File t : filelist )
+			{
+				System.out.println( t.getAbsolutePath() );
+				System.out.println( t.exists() );
+			}
+		}
+		else
+		{
+			System.out.println( f.getAbsolutePath() );
+			System.out.println( f.exists() );
+		}
 		this.fileName = new File(filePath).getName();
 		this.fileDirPath = new File(filePath).getParent() + "\\";
 		this.error = false;
@@ -768,8 +782,8 @@ private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token
 			fieldFromClassRef = this.clazz.getFieldFromFieldRef(fieldOrMethodName.getText());
 		}else{
 			
-			String filePathClass = /*f.getClazz().getFilePath() +*/ f.getClazz().getName() + ".class";
-			String filePathJava = /*f.getClazz().getFilePath() +*/ f.getClazz().getName() + ".java";
+			String filePathClass = f.getClazz().getFilePath() + f.getClazz().getName() + ".class";
+			String filePathJava = f.getClazz().getFilePath() + f.getClazz().getName() + ".java";
 			System.out.println( this.clazz.getFilePath());
 			System.out.println(filePathClass);
 			if(this.checkFile(filePathClass)){
@@ -1050,7 +1064,7 @@ private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token
 					this.clazz.addUsedClasses(new Class(type.getText(), null, "java/lang/String", "java/lang/String"));
 				}else{
 					System.out.println(this.clazz.getFilePath()  + type.getText() + ".java");
-					if(!this.checkFile(/*this.clazz.getFilePath()  + */type.getText() + ".java")){
+					if(!this.checkFile(this.clazz.getFilePath()  + type.getText() + ".java")){
 						System.out.println("TUKSSSSSS");
 						this.errors.printFileDoesNotExists(type, type.getText());
 						this.error = true;
