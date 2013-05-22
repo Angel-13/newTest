@@ -42,9 +42,10 @@ public class Parser {
 	public Parser(String filePath) throws Exception{
 		this.errors = new ErrorsClass();
 		this.lfc = new LookForwardScanner(new Scanner(new LookForwardReader(new FileReader(new File(filePath)))));
-		File f = new File( filePath );
+		File f = new File( "./");
 		if( f.isDirectory() )
 		{
+			Syste.out.println("TUKAA");
 			File[] filelist = f.listFiles();
 			for( File t : filelist )
 			{
