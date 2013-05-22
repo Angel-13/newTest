@@ -8,3 +8,4 @@ clean:
 	rm -f *.class
 %.class: %.java
 	$(JC) $<
+	$(JVM) $(MAIN)
