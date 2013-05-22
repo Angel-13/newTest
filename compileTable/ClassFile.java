@@ -37,6 +37,7 @@ public class ClassFile {
 			this.code.writeTo(f);
 			f.close();
 		} catch (IOException e) {
+		System.out.println("NE");
 				e.printStackTrace();
 			
 		}

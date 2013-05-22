@@ -61,6 +61,7 @@ public class ByteReader {
 			this.lfc.readNext();
 		}
 		this.cpLength = this.lfc.readNext() * 256 + this.lfc.readNext();
+		System.out.println(this.cpLength + "    this.cpLength");
 		//System.out.println(this.cpLength);
 	}
 
@@ -159,6 +160,7 @@ public class ByteReader {
 			//TODO Parse intefrace
 		}
 		int fieldCounter = this.lfc.readNext() * 256 + this.lfc.readNext();
+		
 		if(fieldCounter != 0){
 			return this.parseFields(fieldOrMethodName, clazz, fieldCounter);
 		}else{
