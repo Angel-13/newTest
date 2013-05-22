@@ -33,7 +33,9 @@ public class ClassFile {
 		this.make();
 		OutputStream f;
 		try {
-			f = new FileOutputStream ("C:\\Users\\User\\Desktop\\Compiler Tests\\" + name);
+		System.out.println(this.clazz.getFilePath() + name);System.out.println(this.clazz.getFilePath() + name);
+			System.out.println(this.clazz.getFilePath() + name);
+			f = new FileOutputStream ("dasd"+ name);
 			this.code.writeTo(f);
 			f.close();
 		} catch (IOException e) {
