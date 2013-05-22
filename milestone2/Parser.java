@@ -1051,6 +1051,7 @@ private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token
 					this.clazz.addUsedClasses(new Class(type.getText(), null, "java/lang/String", "java/lang/String"));
 				}else{
 					if(!this.checkFile(this.clazz.getFilePath()  + type.getText() + ".java")){
+						System.out.println("TUKSSSSSS");
 						this.errors.printFileDoesNotExists(type, type.getText());
 						this.error = true;
 					}else{
