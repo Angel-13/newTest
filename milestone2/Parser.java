@@ -44,8 +44,9 @@ public class Parser {
 		this.lfc = new LookForwardScanner(new Scanner(new LookForwardReader(new FileReader(new File(filePath)))));
 		
 		this.fileName = new File(filePath).getName();
-		this.fileDirPath = new File(filePath).getParent() + "\\";
-		File f = new File(new File(filePath).getParent() );
+		this.fileDirPath = new File(filePath).getParent() ;//+ "\\";
+		System.out.println(new File(new File(filePath).getParent() + "Milestone4.java").isFile());
+		File f = new File(new File(filePath).getParent());
 		if( f.isDirectory() )
 		{
 			System.out.println("TUKAA");
