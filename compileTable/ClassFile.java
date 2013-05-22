@@ -33,9 +33,7 @@ public class ClassFile {
 		this.make();
 		OutputStream f;
 		try {
-		System.out.println(this.clazz.getFilePath() + name);System.out.println(this.clazz.getFilePath() + name);
-			System.out.println(this.clazz.getFilePath() + name);
-			f = new FileOutputStream ("dasd"+ name);
+			f = new FileOutputStream (this.clazz.getFilePath() + name);
 			this.code.writeTo(f);
 			f.close();
 		} catch (IOException e) {
