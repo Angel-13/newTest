@@ -1050,6 +1050,7 @@ private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token
 					//TODO read the parent class from class file
 					this.clazz.addUsedClasses(new Class(type.getText(), null, "java/lang/String", "java/lang/String"));
 				}else{
+					System.out.println(this.clazz.getFilePath()  + type.getText() + ".java");
 					if(!this.checkFile(this.clazz.getFilePath()  + type.getText() + ".java")){
 						System.out.println("TUKSSSSSS");
 						this.errors.printFileDoesNotExists(type, type.getText());
