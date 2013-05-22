@@ -42,7 +42,10 @@ public class Parser {
 	public Parser(String filePath) throws Exception{
 		this.errors = new ErrorsClass();
 		this.lfc = new LookForwardScanner(new Scanner(new LookForwardReader(new FileReader(new File(filePath)))));
-		
+		System.out.println(new File(filePath).getPath());
+		System.out.println(new File(filePath).getName());
+		System.out.println(new File(filePath).getAbsolutePath());
+		System.out.println(new File(filePath).getCanonicalPath() );
 		this.fileName = new File(filePath).getName();
 		this.fileDirPath = new File(filePath).getParent() ;//+ "\\";
 		System.out.println(new File(new File(filePath).getParent() + "Milestone4").isFile());
