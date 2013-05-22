@@ -45,7 +45,7 @@ public class Parser {
 		File f = new File( "./");
 		if( f.isDirectory() )
 		{
-			Syste.out.println("TUKAA");
+			System.out.println("TUKAA");
 			File[] filelist = f.listFiles();
 			for( File t : filelist )
 			{
