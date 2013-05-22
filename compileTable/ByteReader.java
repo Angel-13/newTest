@@ -61,7 +61,6 @@ public class ByteReader {
 			this.lfc.readNext();
 		}
 		this.cpLength = this.lfc.readNext() * 256 + this.lfc.readNext();
-		System.out.println(this.cpLength + "    this.cpLength");
 		//System.out.println(this.cpLength);
 	}
 

@@ -50,7 +50,7 @@ public class Parser {
 		this.fileDirPath = new File(filePath).getParent() + "/";
 		//System.out.println(new File(this.fileDirPath+ "Milestone4.java").isFile());
 		//System.out.println(fileDirPath);
-		/*File f = new File(new File(filePath).getParent());
+		File f = new File(new File(filePath).getParent());
 		if( f.isDirectory() )
 		{
 			System.out.println("TUKAA");
@@ -65,13 +65,13 @@ public class Parser {
 		{
 			System.out.println( f.getAbsolutePath() );
 			System.out.println( f.exists() );
-		}*/
+		}
 		this.error = false;
 		this.parseErrors(false);
 		String packageName = this.parsePackage();
 		
 		this.clazz = new Class(this.fileName.split("\\.")[0], new Class("java/lang/Object", null, "java/lang/"), packageName, this.fileDirPath);//array[array.length-1].split("\\.")[0], new Class("java/lang/Object", null));
-		System.out.println(this.clazz.getName() + "  t");
+		System.out.println(this.clazz.getName());
 		this.parseImports();
 		this.parseClass();
 		this.lfc.closeReader();
@@ -109,7 +109,6 @@ public class Parser {
 				this.clazz.getMethods().get(i).makeByteWriter();
 			}
 			this.classfile = new ClassFile(this.clazz, this.clazz.getName() + ".class");
-			System.out.println(this.clazz.getName() + "  vnatre i sozadena");
 		}else{
 			this.classfile = null;
 		}
