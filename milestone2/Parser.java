@@ -798,7 +798,7 @@ private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token
 				Parser pr = new Parser(filePathJava);
 				this.error = pr.getError();
 				if(!this.error){
-					ByteReader breader = new ByteReader(filePathClass);
+					ByteReader breader = new ByteReader(filePathJava);
 					fieldFromClassRef = breader.findField(fieldOrMethodName,f.getClazz());
 				}else{
 					//TODO
