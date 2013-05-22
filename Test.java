@@ -1,5 +1,5 @@
 public class Test{
-	//@M
+	@M
 	public static int milestone_4(String[] args){
 		int a;
 		Milestone4 m  = new Milestone4();

@@ -1,12 +1,12 @@
 public class Milestone4{
 	
-	//@F
+	@F
 	public int f;
 	
-	//@F
+	@F
 	public int g;
 	
-	//@F
+	@F
 	public int[] arr;
 	
 	/*@M
