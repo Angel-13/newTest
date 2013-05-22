@@ -71,7 +71,7 @@ public class Parser {
 		String packageName = this.parsePackage();
 		
 		this.clazz = new Class(this.fileName.split("\\.")[0], new Class("java/lang/Object", null, "java/lang/"), packageName, this.fileDirPath);//array[array.length-1].split("\\.")[0], new Class("java/lang/Object", null));
-		//System.out.println(this.clazz.getName());
+		System.out.println(this.clazz.getName());
 		this.parseImports();
 		this.parseClass();
 		this.lfc.closeReader();
