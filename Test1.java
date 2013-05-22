@@ -1,5 +1,5 @@
 import java.io.*;
-import parser.*;
+import milestone2.Parser;
 
 public class Test1{
 	
