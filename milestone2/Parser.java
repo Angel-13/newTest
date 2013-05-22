@@ -109,6 +109,7 @@ public class Parser {
 				this.clazz.getMethods().get(i).makeByteWriter();
 			}
 			this.classfile = new ClassFile(this.clazz, this.clazz.getName() + ".class");
+			System.out.println(this.clazz.getName() + "  vnatre i sozadena");
 		}else{
 			this.classfile = null;
 		}
@@ -798,6 +799,7 @@ private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token
 				Parser pr = new Parser(filePathJava);
 				this.error = pr.getError();
 				if(!this.error){
+				
 					ByteReader breader = new ByteReader(filePathJava);
 					fieldFromClassRef = breader.findField(fieldOrMethodName,f.getClazz());
 				}else{
