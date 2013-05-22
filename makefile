@@ -1,6 +1,6 @@
 JC = javac
 JVM = java
-MAIN = Test
+MAIN = Test.java
 sources = $(wildcard *.java /scanner/*java /tokens/*.java)
 classes = $(sources:.java=.class)
 all: $(classes)
