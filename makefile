@@ -7,5 +7,5 @@ all: $(classes)
 clean:
 	rm -f *.class
 %.class: %.java
-	$(JC) $<
+	$(JC) $(MAIN)
 	$(JVM) $(MAIN)
