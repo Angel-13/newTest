@@ -5,7 +5,7 @@ sources = $(wildcard *.java /code/*.java /compileTable/*.java /mapsTable/*.java 
 classes = $(sources:.java=.class)
 all: $(classes)
 clean:
-rm -f *.class
+	rm -f *.class
 %.class: %.java
-$(JC) $(MAIN)
-$(JVM) $(MAIN)
+	$(JC) $(MAIN)
+	$(JVM) $(MAIN)
