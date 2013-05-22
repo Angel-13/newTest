@@ -42,15 +42,15 @@ public class Parser {
 	public Parser(String filePath) throws Exception{
 		this.errors = new ErrorsClass();
 		this.lfc = new LookForwardScanner(new Scanner(new LookForwardReader(new FileReader(new File(filePath)))));
-		System.out.println(new File(filePath).getPath());
-		System.out.println(new File(filePath).getName());
-		System.out.println(new File(filePath).getAbsolutePath());
-		System.out.println(new File(filePath).getCanonicalPath() );
+		//System.out.println(new File(filePath).getPath());
+		//System.out.println(new File(filePath).getName());
+		//System.out.println(new File(filePath).getAbsolutePath());
+		//System.out.println(new File(filePath).getCanonicalPath() );
 		this.fileName = new File(filePath).getName();
-		this.fileDirPath = new File(filePath).getParent() + "/";//+ "\\";
-		System.out.println(new File(this.fileDirPath+ "Milestone4.java").isFile());
-		System.out.println(fileDirPath);
-		File f = new File(new File(filePath).getParent());
+		this.fileDirPath = new File(filePath).getParent() + "/";
+		//System.out.println(new File(this.fileDirPath+ "Milestone4.java").isFile());
+		//System.out.println(fileDirPath);
+		/*File f = new File(new File(filePath).getParent());
 		if( f.isDirectory() )
 		{
 			System.out.println("TUKAA");
@@ -65,7 +65,7 @@ public class Parser {
 		{
 			System.out.println( f.getAbsolutePath() );
 			System.out.println( f.exists() );
-		}
+		}*/
 		this.error = false;
 		this.parseErrors(false);
 		String packageName = this.parsePackage();
@@ -791,11 +791,9 @@ private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token
 			
 			String filePathClass = f.getClazz().getFilePath() + f.getClazz().getName() + ".class";
 			String filePathJava = f.getClazz().getFilePath() + f.getClazz().getName() + ".java";
-			System.out.println( this.clazz.getFilePath());
-			System.out.println(filePathClass);
+			//System.out.println( this.clazz.getFilePath());
+			//System.out.println(filePathClass);
 			if(this.checkFile(filePathClass)){
-			
-				
 				ByteReader breader = new ByteReader(filePathClass);
 				fieldFromClassRef = breader.findField(fieldOrMethodName,f.getClazz());
 			}else if(this.checkFile(filePathJava)){
