@@ -1,5 +1,5 @@
- FOO = $PATH
+FOO = $PATH
 
- all:
-         @echo $(FOO)
-         @echo $(value FOO)
+all:
+	@echo $(FOO)
+	@echo $(value FOO)
