@@ -636,7 +636,6 @@ public class Parser {
 				if(!b){
 					break;
 				}
-//TUKAAAAAA
 				//Token t = this.lfc.readNextToken();
 				Token semicolon = this.expected(new Token(this.tks.SEMICOLON, ";"));
 				if(!this.iskCorrectToken(semicolon)){
@@ -769,8 +768,8 @@ private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token
 			fieldFromClassRef = this.clazz.getFieldFromFieldRef(fieldOrMethodName.getText());
 		}else{
 			
-			String filePathClass = f.getClazz().getFilePath() + f.getClazz().getName() + ".class";
-			String filePathJava = f.getClazz().getFilePath() + f.getClazz().getName() + ".java";
+			String filePathClass = /*f.getClazz().getFilePath() +*/ f.getClazz().getName() + ".class";
+			String filePathJava = /*f.getClazz().getFilePath() +*/ f.getClazz().getName() + ".java";
 			System.out.println( this.clazz.getFilePath());
 			System.out.println(filePathClass);
 			if(this.checkFile(filePathClass)){
@@ -1051,7 +1050,7 @@ private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token
 					this.clazz.addUsedClasses(new Class(type.getText(), null, "java/lang/String", "java/lang/String"));
 				}else{
 					System.out.println(this.clazz.getFilePath()  + type.getText() + ".java");
-					if(!this.checkFile(this.clazz.getFilePath()  + type.getText() + ".java")){
+					if(!this.checkFile(/*this.clazz.getFilePath()  + */type.getText() + ".java")){
 						System.out.println("TUKSSSSSS");
 						this.errors.printFileDoesNotExists(type, type.getText());
 						this.error = true;
