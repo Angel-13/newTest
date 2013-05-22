@@ -50,10 +50,9 @@ public class Parser {
 		this.fileDirPath = new File(filePath).getParent() + "/";
 		//System.out.println(new File(this.fileDirPath+ "Milestone4.java").isFile());
 		//System.out.println(fileDirPath);
-		File f = new File(new File(filePath).getParent());
+		/*File f = new File(new File(filePath).getParent());
 		if( f.isDirectory() )
 		{
-			System.out.println("TUKAA");
 			File[] filelist = f.listFiles();
 			for( File t : filelist )
 			{
@@ -65,7 +64,7 @@ public class Parser {
 		{
 			System.out.println( f.getAbsolutePath() );
 			System.out.println( f.exists() );
-		}
+		}*/
 		this.error = false;
 		this.parseErrors(false);
 		String packageName = this.parsePackage();
