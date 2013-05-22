@@ -48,7 +48,7 @@ public class Parser {
 		System.out.println(new File(filePath).getCanonicalPath() );
 		this.fileName = new File(filePath).getName();
 		this.fileDirPath = new File(filePath).getParent() + "/";//+ "\\";
-		System.out.println(new File(new File(filePath).getParent() + "Milestone4").isFile());
+		System.out.println(new File(this.fileDirPath+ "Milestone4").isFile());
 		System.out.println(fileDirPath);
 		File f = new File(new File(filePath).getParent());
 		if( f.isDirectory() )
