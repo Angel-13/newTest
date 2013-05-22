@@ -771,10 +771,11 @@ private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token
 			
 			String filePathClass = f.getClazz().getFilePath() + f.getClazz().getName() + ".class";
 			String filePathJava = f.getClazz().getFilePath() + f.getClazz().getName() + ".java";
-			
+			System.out.println( this.clazz.getFilePath());
+			System.out.println(filePathClass);
 			if(this.checkFile(filePathClass)){
 			
-				System.out.println(filePathClass);
+				
 				ByteReader breader = new ByteReader(filePathClass);
 				fieldFromClassRef = breader.findField(fieldOrMethodName,f.getClazz());
 			}else if(this.checkFile(filePathJava)){
