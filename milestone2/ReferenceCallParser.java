@@ -143,11 +143,13 @@ public class ReferenceCallParser {
 				//System.out.println(filePathClass);
 				//System.out.println(filePathJava);
 				if(this.checkFile(filePathClass)){
-					System.out.println(filePathClass);
+					//System.out.println(filePathClass);
 					ByteReader breader = new ByteReader(filePathClass);
 					this.fieldFromClassRef = breader.findField(fieldOrMethodName,f.getClazz());
 				}else if(this.checkFile(filePathJava)){
+					System.out.println(filePathJava);
 					Parser pr = new Parser(filePathJava);
+					System.out.println(this.checkFile(filePathClass));
 					this.error = pr.getError();
 					if(!this.error){
 						ByteReader breader = new ByteReader(filePathClass);
