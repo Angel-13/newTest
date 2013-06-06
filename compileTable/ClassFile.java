@@ -35,7 +35,7 @@ public class ClassFile {
 		OutputStream f;
 		
 		try {
-			f = new FileOutputStream ("C:\\Users\\User\\Desktop\\Compiler Tests\\" + name);
+			f = new FileOutputStream (this.clazz.getFilePath() + name);
 			this.code.writeTo(f);
 			f.close();
 		} catch (IOException e) {
