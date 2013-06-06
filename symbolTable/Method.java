@@ -1,11 +1,9 @@
 package symbolTable;
 
 //import parser.Parser;
-import tokens.Token;
 import compileTable.ByteReader;
 import compileTable.ByteWriter;
 
-import Code.ArthmeticExpression;
 import Code.Expression;
 import mapsTable.FieldIntMap;
 import milestone2.IfParser;
@@ -42,6 +40,14 @@ public class Method {
 	
 	private final ByteWriter bWriter;
 	
+	private final ByteWriter stackMapTable;
+	
+	private final FieldArrayList StackFrameFieldCounter;
+	
+	private final FieldArrayList allReadyDefined;
+	
+	private final StackMapTableList stackMapTablelist;
+	
 	private int maxStack;
 	
 	public Method(Parser parser, String name, Type returnType, ParameterList pList, Class clazz, boolean isStatic, boolean isPrivate){
@@ -57,6 +63,10 @@ public class Method {
 		this.ifparser = null;
 		this.filedmap = new FieldIntMap();
 		this.bWriter = new ByteWriter();
+		this.StackFrameFieldCounter = new FieldArrayList();
+		this.allReadyDefined = new FieldArrayList();
+		this.stackMapTablelist = new StackMapTableList();
+		this.stackMapTable = new ByteWriter();
 		if(this.isStatic){
 			this.position = 0;
 		}else{
@@ -82,14 +92,46 @@ public class Method {
 		return this.localVariables;
 	}
 	
+	public FieldArrayList getStackFrameFieldCounter(){
+		return this.StackFrameFieldCounter;
+	}
+	
+	public FieldArrayList getAlreadyDefinedFields(){
+		return this.allReadyDefined;
+	}
+	
+	public ByteWriter getStackMapTableCode(){
+		return this.stackMapTable;
+	}
+	
 	public void addParameter(Field field){
 		this.pList.addParameter(field);
 		this.addFildInFieldMap(field);
 	}
 	
+	public void addToStackMapTableList(StackMapTableObject smtl){
+		this.stackMapTablelist.add(smtl);
+	}
+	
+	public void addFieldToStackFrameFieldCounter(Field field){
+		this.StackFrameFieldCounter.add(field);
+	}
+	
+	public void addToAlreadyDefinedFields(Field field){
+		this.allReadyDefined.add(field);
+	}
+	
 	public void addLocalVariable(Field field){
 		this.localVariables.add(field);
 		this.addFildInFieldMap(field);
+	}
+	
+	public void ResetStackFrameFieldCounter(){
+		this.StackFrameFieldCounter.clear();
+	}
+	
+	public StackMapTableList getStackMapTableList(){
+		return this.stackMapTablelist;
 	}
 	
 	public String getName(){
@@ -357,12 +399,12 @@ public class Method {
 		}
 	}
 
-	public void makeItFinishTheByteCodeForMethod(Token t) {
+	/*public void makeItFinishTheByteCodeForMethod(Token t, String s) {
 		ArthmeticExpression ax = new ArthmeticExpression(this.filedmap, this);
 		this.bWriter.writeAll(ax.getCodeForIdentifeerOrNumber(t, false));
 		this.bWriter.write1Byte(0xac);
 		
-	}
+	}*/
 	
 	public String getParametersDescriptor(){
 		String str = "(";
@@ -398,5 +440,43 @@ public class Method {
 	public int getMaxStack(){
 		this.maxStack = this.calculateMaxStackSize();
 		return this.maxStack;
+	}
+	
+	public void printLocalFieldNames(){
+		for(int i = 0; i < this.localVariables.size(); i++){
+			System.out.println(this.localVariables.get(i).getName());
+		}
+	}
+	
+	public void printStackFrameFieldCounter(){
+		for(int i = 0; i < this.StackFrameFieldCounter.size(); i++){
+			System.out.println(this.StackFrameFieldCounter.get(i).getName());
+		}
+	}
+	
+	public void makeStackMapTableCode(){
+		int numberOfEtnries = this.stackMapTablelist.size();
+		ByteWriter b = new ByteWriter();
+		for(int i = 0; i < this.stackMapTablelist.size(); i++){
+			b.writeAll(this.stackMapTablelist.get(i).getExpressionCode());
+		}
+		int attribute_lenght = b.size() + 2;
+		this.stackMapTable.write4Byte(attribute_lenght);
+		this.stackMapTable.write2Byte(numberOfEtnries);
+		this.stackMapTable.writeAll(b);
+		
+	}
+	
+	public int getStackMapTableListSum(){
+		int sum = 0;
+		for(int i=0; i<this.stackMapTablelist.size(); i++){
+			if(i==0){
+				sum = sum + this.stackMapTablelist.get(i).getPosition();
+			}else{
+				sum = sum + this.stackMapTablelist.get(i).getPosition() + 1;
+			}
+			
+		}
+		return sum;
 	}
 }

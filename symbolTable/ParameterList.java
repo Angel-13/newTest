@@ -35,7 +35,7 @@ public class ParameterList {
 	}
 	
 	public boolean containsByName(String name){
-		return this.parameters.contains(name);
+		return this.parameters.containsByName(name);
 	}
 	
 	public int indexOfByName(String name){

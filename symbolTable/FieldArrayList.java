@@ -32,7 +32,7 @@ public class FieldArrayList
 
 	}
 	
-	public boolean contains(String name)
+	public boolean containsByName(String name)
 	{
 		for(int i=0; i<this.array.size();i++){
 			if(this.array.get(i).getName().equals(name))
@@ -66,5 +66,9 @@ public class FieldArrayList
 	
 	public boolean isEmpty(){
 		return this.array.isEmpty();
+	}
+	
+	public void clear(){
+		this.array.clear();
 	}
 }

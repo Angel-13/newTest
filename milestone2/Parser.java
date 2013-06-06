@@ -13,6 +13,7 @@ import scanner.Scanner;
 import symbolTable.Field;
 import symbolTable.Method;
 import symbolTable.ParameterList;
+import symbolTable.StackMapTableObject;
 import symbolTable.TokenArrayList;
 import symbolTable.Type;
 
@@ -42,29 +43,9 @@ public class Parser {
 	public Parser(String filePath) throws Exception{
 		this.errors = new ErrorsClass();
 		this.lfc = new LookForwardScanner(new Scanner(new LookForwardReader(new FileReader(new File(filePath)))));
-		//System.out.println(new File(filePath).getPath());
-		//System.out.println(new File(filePath).getName());
-		//System.out.println(new File(filePath).getAbsolutePath());
-		//System.out.println(new File(filePath).getCanonicalPath() );
+		
 		this.fileName = new File(filePath).getName();
 		this.fileDirPath = new File(filePath).getParent() + "/";
-		//System.out.println(new File(this.fileDirPath+ "Milestone4.java").isFile());
-		//System.out.println(fileDirPath);
-		/*File f = new File(new File(filePath).getParent());
-		if( f.isDirectory() )
-		{
-			File[] filelist = f.listFiles();
-			for( File t : filelist )
-			{
-				System.out.println( t.getAbsolutePath() );
-				System.out.println( t.exists() );
-			}
-		}
-		else
-		{
-			System.out.println( f.getAbsolutePath() );
-			System.out.println( f.exists() );
-		}*/
 		this.error = false;
 		this.parseErrors(false);
 		String packageName = this.parsePackage();
@@ -103,7 +84,6 @@ public class Parser {
 		//this.clazz.getMethods().get(1).printVariables();
 		//this.clazz.printSymbolTable();
 		if(!this.error){
-			//System.out.println("TUIKA");
 			for(int i = 1; i < this.clazz.getMethods().size(); i++){
 				this.clazz.getMethods().get(i).makeByteWriter();
 			}
@@ -198,7 +178,6 @@ public class Parser {
 							t = this.lfc.lookAhead();
 						}
 						if(b){
-							//System.out.println("TUKA SUMMMM");
 							this.expected(new Token(this.tks.SEMICOLON, ";"));
 						}
 					}
@@ -247,7 +226,7 @@ public class Parser {
 		String str1 = this.clazz.getFilePath() + packageName;
 		boolean checkDir = new File(str1).exists();
 		return checkDir;
-}
+	}
 
 /******  Beginning the file only PUBLIC,PACKAGE OR IMPORT are allowed ************************/
 /*******************************************************************************************
@@ -510,7 +489,7 @@ public class Parser {
 						if(this.isNextToken(new Token(this.tks.NEW))){
 							this.lfc.readNextToken();
 							//TODO str to make to be it for parameters  -->  expression.parseTokenNew(s, str);
-							b = expression.parseTokenNew(f);
+							b = expression.parseTokenNew(f, m);
 							if(!b){
 								break;
 							}else{
@@ -526,12 +505,19 @@ public class Parser {
 						}else{
 							b = expression.parseExpression(m, f, true, false);
 							if(b){
-								if(!this.clazz.isAllreadyContainingClassReference(f.getType().toString()) && !this.isIdentifierToken(f.getToken())
-										&& !this.error){
+								if(!this.clazz.isAllreadyContainingClassReference(f.getType().toString()) && !this.isIdentifierToken(f.getToken())){
 									this.clazz.addCassReference(f.getClazz());
 								}
 								if(!this.error){
-									expression.addArithmeticFieldWriter(m);
+									expression.addArithmeticFieldWriter(m, f);
+								}
+							}
+						}
+						if(!this.error){
+							if(m.getLocalVariables().containsByName(f.getName())){
+								if(!m.getAlreadyDefinedFields().containsByName(f.getName())){
+									m.addToAlreadyDefinedFields(f);
+									m.addFieldToStackFrameFieldCounter(f);
 								}
 							}
 						}
@@ -544,13 +530,23 @@ public class Parser {
 								this.clazz.addCassReference(f.getClazz());
 							}
 							if(!this.error){
-								expression.addArithmeticFieldWriter(m);
+								expression.addArithmeticFieldWriter(m, f);
+							}
+						}
+						if(!this.error){
+							if(m.getLocalVariables().containsByName(f.getName())){
+								if(!m.getAlreadyDefinedFields().containsByName(f.getName())){
+									m.addToAlreadyDefinedFields(f);
+									m.addFieldToStackFrameFieldCounter(f);
+								}
 							}
 						}
 					}
 				}else if(this.isNextToken(new Token(this.tks.DOT))){
 					this.lfc.readNextToken();
-					b = this.parseMethodOrFieldCall(type, m);
+					ReferenceCallParser refCall = new ReferenceCallParser(this.lfc, this.clazz, this.error, this);
+					b = refCall.parseMethodOrFieldCall(type, m, null);
+					this.error = refCall.getError();
 					if(!b){
 						break;
 					}
@@ -560,17 +556,33 @@ public class Parser {
 					if(this.isNextToken(equal)){
 						this.lfc.readNextToken();
 						String str = this.getFilePath(type);
-						Field s = new Field(new Type(type), name.getText(), new Class(type.getText(), null, str), name);
+						Field s;
+						if(m.isContainingFildMethodAndClass(name.getText(),false)){
+							s = m.findFieldInsideMethoAndClass(name.getText());
+						}else{
+							Class cl = this.clazz.getUsedClassByName(type.getText());
+							if(cl == null){
+								s = new Field(new Type(type), name.getText(), new Class(type.getText(), null, str), name);
+							}else{
+								s = new Field(new Type(type), name.getText(), cl, name);
+							}
+						}
 						ExpressionParser expression = new ExpressionParser(this);
 						if(this.isNextToken(new Token(this.tks.NEW))){
 							this.lfc.readNextToken();
 							//TODO str to make to be it for parameters  -->  expression.parseTokenNew(s, str);
-							b = expression.parseTokenNew(s);
+							b = expression.parseTokenNew(s, m);
 							if(!b){
 								break;
 							}else{
-								m.addLocalVariable(s);
-								if(!this.clazz.isAllreadyContainingClassReference(s.getType().toString()) && !this.error){
+								//m.addLocalVariable(s);
+								if(m.isContainingFildMethodAndClass(s.getName(), true)){
+									this.errors.printContainsFieldError(s.getToken());
+									this.error = true;
+								}else{
+									m.addLocalVariable(s);
+								}
+								if(!this.clazz.isAllreadyContainingClassReference(s.getType().toString())){
 									this.clazz.addCassReference(s.getClazz());
 								}
 								this.checkIfFileOrClassExists(type);
@@ -587,13 +599,26 @@ public class Parser {
 										&& !this.error){
 									this.clazz.addCassReference(s.getClazz());
 								}
-								m.addLocalVariable(s);
+								if(m.isContainingFildMethodAndClass(s.getName(), true)){
+									this.errors.printContainsFieldError(s.getToken());
+									this.error = true;
+								}else{
+									m.addLocalVariable(s);
+								}
 								this.checkIfFileOrClassExists(type);
 								if(!this.error){
-									expression.addArithmeticFieldWriter(m);
+									expression.addArithmeticFieldWriter(m, s);
 								}
 							}else{
 								break;
+							}
+						}
+						if(!this.error){
+							if(m.getLocalVariables().containsByName(s.getName())){
+								if(!m.getAlreadyDefinedFields().containsByName(s.getName())){
+									m.addToAlreadyDefinedFields(s);
+									m.addFieldToStackFrameFieldCounter(s);
+								}
 							}
 						}
 					}else if(this.isNextToken(new Token(this.tks.SEMICOLON,";"))){
@@ -605,7 +630,19 @@ public class Parser {
 						}else{
 							String str = this.getFilePath(type);
 							this.checkIfFileOrClassExists(type);
-							m.addLocalVariable(new Field(new Type(type), name.getText(), new Class(type.getText(), null, str), name));
+							Field s;
+							Class cl = this.clazz.getUsedClassByName(type.getText());
+							if(cl == null){
+								s = new Field(new Type(type), name.getText(), new Class(type.getText(), null, str), name);
+							}else{
+								s = new Field(new Type(type), name.getText(), cl, name);
+							}
+							if(m.isContainingFildMethodAndClass(s.getName(), true)){
+								this.errors.printContainsFieldError(s.getToken());
+								this.error = true;
+							}else{
+								m.addLocalVariable(s);
+							}
 							this.expected(new Token(this.tks.SEMICOLON, ";"));
 							b = true;
 						}
@@ -624,33 +661,25 @@ public class Parser {
 				}
 			}else if(this.isNextToken(new Token(this.tks.IF))){
 				this.expected(new Token(this.tks.IF));
-				IfParser ifparser = new IfParser(m, this);
+				int start = m.getStartOfLoopPosition();
+				//System.out.println(start);
+				IfParser ifparser = new IfParser(m, this, 0);
 				m.setIfParser(ifparser);
 				b = ifparser.parse();
 				if(!b){
 					break;
 				}
-				
-				//TODO TO MAKE THE SAME LIKE FOR WHILE LOOP
+				m.addEpressions(ifparser.getExpressions());
 			}else if(this.isNextToken(new Token(this.tks.WHILE))){
 				this.expected(new Token(this.tks.WHILE));
-				LoopParser loopparser = new LoopParser(m, this);
+				int start = m.getStartOfLoopPosition();
+				LoopParser loopparser = new LoopParser(m, this, start);
 				m.setLoopParser(loopparser);
 				b = loopparser.parse();
 				if(!b){
 					break;
 				}
-				//System.out.println(loopparser.getLengthFromAllExpressions());
-				//int number = loopparser.getLengthFromAllExpressions() - loopparser.getStackMapTable().get(loopparser.getStackMapTable().size()-1) - 2;
-				//loopparser.getStackMapTable().add(number);
-				//loopparser.printStackMapTable();
-				loopparser.makeStackMapTable();
-				//loopparser.printStackMapTable();
-				
 				m.addEpressions(loopparser.getExpressions());
-		/**********************************************************************************************************************/
-				m.makeByteWriter();
-				//m.getByteWriter().printByteArray();
 			}else if(this.isNextToken(new Token(this.tks.RETURN))){
 				b = this.checkReturnTypeValidation(m);
 				if(!b){
@@ -686,190 +715,21 @@ public class Parser {
 		if(!b){
 			this.error = true;
 		}
+		if(!this.error){
+			if((m.getIfParser() != null) || (m.getLoopParser() != null)){
+				m.makeStackMapTableCode();
+			}
+		}
+		//m.printStackFrameFieldCounter();
+/*****************************************************************************************************************************************************************************/
+		/*if(!this.error){
+			m.makeByteWriter();
+			m.getByteWriter().printByteArray();
+			m.printStackFrameFieldCounter();
+		}*/
 		return b;
 	}
-/*******************************************************************************************
- *  boolean parseMethodOrFieldCall(Token type)) 
- *  		- 
- * @throws Exception 
- *******************************************************************************************/
-	private boolean parseMethodOrFieldCall (Token name, Method m) throws Exception{
-		boolean b = true;
-		boolean isContainigField = m.isContainingFildMethodAndClass(name.getText(), true);
-		Field f = null;
-		if(!isContainigField){
-			this.error = true;
-			this.errors.identifierDoesNotExistsError(name);
-		}else{
-			f = m.findFieldInsideMethoAndClass(name.getText());
-		}
-		Token fieldOrMethodName = this.expected(new Token(this.tks.IDENTIFIER,"Identifier"));
-		if(fieldOrMethodName.getToken() != -1){
-			if(!isContainigField){
-				TokenArrayList tk = new TokenArrayList();
-				tk.add(new Token(this.tks.ASSIGNMENT, "="));
-				tk.add(new Token(this.tks.ROUND_BRACKET_OPEN, "("));
-				tk.add(new Token(this.tks.SQUARE_BRACKET_OPEN, "["));
-				Token er = this.expected(tk);
-				if(er.getToken() != -1){
-					if(er.getToken() == this.tks.ASSIGNMENT){
-						//TODO To parse Without generating the code because there is an error
-						//this.parseAssignmentWhitoutCodeGeneration();
-					}else{
-						this.expected(new Token(this.tks.ASSIGNMENT, "="));
-						this.lfc.readNextToken();
-						this.expected(new Token(this.tks.SEMICOLON, ";"));
-						b = false;
-					}
-				}else{
-					b = false;
-				}	
-			}else{
-				if(this.isNextToken(new Token(this.tks.ASSIGNMENT))){
-					this.lfc.readNextToken();
-					b = this.parseFieldCall(f, fieldOrMethodName, m, name, -1);
-				}else if(this.isNextToken(new Token(this.tks.ROUND_BRACKET_OPEN))){
-					//TODO IMPLEMENT METHOD CALLS
-				}else if(this.isNextToken(new Token(this.tks.SQUARE_BRACKET_OPEN))){
-					this.expected(new Token(this.tks.SQUARE_BRACKET_OPEN, "["));
-					Token number = this.expected(new Token(this.tks.NUMBER, "Number"));
-					if(number.getToken() != -1){
-						Token t = this.expected(new Token(this.tks.SQUARE_BRACKET_CLOSE, "]"));
-						if(t.getToken() !=-1){
-							t = this.expected(new Token(this.tks.ASSIGNMENT, "="));
-							if(t.getToken() != -1){
-								int num = Integer.parseInt(number.getText());
-								b = this.parseFieldCall(f, fieldOrMethodName, m, name, num);
-							}else{
-								this.lfc.readNextToken();
-								this.expected(new Token(this.tks.SEMICOLON, ";"));
-								b = false;
-							}
-						}else{
-							this.lfc.readNextToken();
-							this.expected(new Token(this.tks.SEMICOLON, ";"));
-							b = false;
-						}
-					}else{
-						this.lfc.readNextToken();
-						this.expected(new Token(this.tks.SEMICOLON, ";"));
-						b = false;
-					}
-				}else{
-					Token error = this.lfc.readNextToken();
-					TokenArrayList tk = new TokenArrayList();
-					tk.add(new Token(this.tks.ASSIGNMENT, "="));
-					tk.add(new Token(this.tks.ROUND_BRACKET_OPEN, "("));
-					tk.add(new Token(this.tks.SQUARE_BRACKET_OPEN, "["));
-					this.errors.printExpectedMoreTokensError(error, tk);
-					
-					this.error = true;
-					b = false;
-				}	
-			}		
-		}else{
-			this.lfc.readNextToken();
-			this.expected(new Token(this.tks.SEMICOLON, ";"));
-			b = false;
-		}
-		return b;
-	}
-/*******************************************************************************************
- *  String getFilePath(Token type) 
- *  		- 
- * @throws Exception 
- *******************************************************************************************/
-private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token name, int position) throws Exception {
-	boolean b = true;
-	ExpressionParser ex = new ExpressionParser(this);
-	if(this.clazz.isAllreadyContainingClassReference(f.getClazz().getName())){
-		Field fieldFromClassRef;
-		if(this.clazz.isAllreadyContainingFieldReference(fieldOrMethodName.getText())){
-			fieldFromClassRef = this.clazz.getFieldFromFieldRef(fieldOrMethodName.getText());
-		}else{
-			
-			String filePathClass = f.getClazz().getFilePath() + f.getClazz().getName() + ".class";
-			String filePathJava = f.getClazz().getFilePath() + f.getClazz().getName() + ".java";
-			if(this.checkFile(filePathClass)){
-				ByteReader breader = new ByteReader(filePathClass);
-				fieldFromClassRef = breader.findField(fieldOrMethodName,f.getClazz());
-			}else if(this.checkFile(filePathJava)){
-				Parser pr = new Parser(filePathJava);
-				this.error = pr.getError();
-				if(!this.error){
-				
-					ByteReader breader = new ByteReader(filePathClass);
-					fieldFromClassRef = breader.findField(fieldOrMethodName,f.getClazz());
-				}else{
-					//TODO
-					System.out.println(this.clazz.getName() + "  ERROR");
-					fieldFromClassRef = null;
-				}
-			}else{
-				fieldFromClassRef = null;
-			}
-		}
-		if(fieldFromClassRef == null){
-			this.error = true;
-			this.errors.printFieldDoesNotExists(fieldOrMethodName);
-		}else{
-			if(!this.clazz.isAllreadyContainingFieldReference(fieldOrMethodName.getText())){
-				f.getClazz().addClassField(fieldFromClassRef);
-				this.clazz.addFieldReference(fieldFromClassRef);
-			}
-			//TODO Make it better(we know if fieldFromClassRef is array field or normal field)
-			if(this.isNextToken(new Token(this.tks.NEW))){
-				if(position != -1){
-					this.error = true;
-					b = false;
-					System.out.println("ERROR");
-					//TODO PRINT THE ERROR 
-				}else{
-					this.lfc.readNextToken();
-					b = ex.parseTokenNew(fieldFromClassRef);
-					if(b){
-						if(!this.error){
-							if(fieldFromClassRef.getType().isArray()){
-								ex.addNewFieldArrayWriter(m, fieldFromClassRef, f.getClazz(), f);
-							}else{
-								//TODO TO IMPLEMET NEW TOKEN FOR FIELD REFERENCES
-							}
-						}
-					}
-				}
-			}else{
-				if(position != -1){
-					if(fieldFromClassRef.getType().isArray()){
-						if(fieldFromClassRef.getSize() <= position){
-							this.error = true;
-							System.out.println("ERROR1");
-							//TODO PRINT THE ERROR 
-						}
-					}else{
-						this.error = true;
-						b = false;
-						System.out.println("ERROR2");
-						//TODO PRINT THE ERROR 
-					}
-				}else{
-					
-				}
-				if(b){
-					b = ex.parseFieldRefExpression(fieldOrMethodName, m, f.getClazz());
-					if(b){
-						if(!this.error){
-							ex.addArithmeticFieldRefWriter(m,name ,fieldFromClassRef, this.clazz, position, f);
-						}
-					}
-				}
-				
-			}
-		}
-		
-	}
-	return b;
-	
-}
+
 
 /*******************************************************************************************
  *  String getFilePath(Token type) 
@@ -948,34 +808,6 @@ private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token
 			}
 		}
 		return true;
-	}
-
-/*******************************************************************************************
- *  loopParseByte(Method m, LoopParser loopparser)
- *  		- 
- *  	 	-  
- *  		- 
- *******************************************************************************************/
-	private void loopParseByte(Method m, LoopParser loopparser) {
-		int startPosition = m.calculateExpressionPosition();
-		loopparser.makeByteWriter(startPosition);
-	}
-
-/*******************************************************************************************
- *  makeIfParserByteCode((Method m, IfParser ifp))
- *  		- 
- *  	 	-  
- *  		- 
- *******************************************************************************************/
-	private void makeIfParserExpressionFinish(Method m, IfParser ifp) {
-		int startPosition = m.calculateExpressionPosition();
-		//System.out.println("Startposition: " + startPosition);
-		ifp.setElsePosition(startPosition, false);
-		//System.out.println(ifp.getByteWriter().size());
-		//System.out.println(ifp.getStackMapTable().size());
-		ifp.printStackMapTable();
-		ifp.getByteWriter().printByteArray();
-		
 	}
 
 /*******************************************************************************************
@@ -1065,7 +897,6 @@ private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token
 					//TODO read the parent class from class file
 					this.clazz.addUsedClasses(new Class(type.getText(), null, "java/lang/String", "java/lang/String"));
 				}else{
-					//System.out.println(this.clazz.getFilePath()  + type.getText() + ".java");
 					if(!this.checkFile(this.clazz.getFilePath()  + type.getText() + ".java")){
 						this.errors.printFileDoesNotExists(type, type.getText());
 						this.error = true;

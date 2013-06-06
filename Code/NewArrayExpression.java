@@ -5,6 +5,7 @@ import scanner.LookForwardScanner;
 import symbolTable.Class;
 import symbolTable.Field;
 import symbolTable.Method;
+import tokens.Token;
 import tokens.Tokens;
 import compileTable.ByteWriter;
 import compileTable.Operations;
@@ -43,14 +44,29 @@ public class NewArrayExpression implements Expression{
 			this.code.write1Byte(this.operations.ALOAD);
 			this.code.write1Byte(position);
 		}
-		int number =  Integer.parseInt(this.lange);
-		this.fieldRef.setSize(number);
-		if((number >=0) && (number <=5)){
-			this.code.write1Byte(this.operations.getICONSTbyNumber(number));
+		if(method.isContainingFildMethodAndClassAndLoops(lange, false)){
+
+			
+			Field f = method.findFieldInsideMethoAndClassAndScope(lange);
+			this.fieldRef.setSize(f.getValue());
+			int mapPostition = method.getFieldMap().get(f);
+			if((mapPostition>=0) && (mapPostition<=3)){
+				this.code.write1Byte(this.operations.getILOADbyNumber(mapPostition));
+			}else{
+				this.code.write1Byte(this.operations.ILOAD);
+				this.code.write1Byte(mapPostition);
+			}
 			
 		}else{
-			this.code.write1Byte(this.operations.BIPUSH);
-			this.code.write1Byte(number);
+			int number =  Integer.parseInt(this.lange);
+			this.fieldRef.setSize(number);
+			if((number >=0) && (number <=5)){
+				this.code.write1Byte(this.operations.getICONSTbyNumber(number));
+				
+			}else{
+				this.code.write1Byte(this.operations.BIPUSH);
+				this.code.write1Byte(number);
+			}
 		}
 		this.code.write1Byte(this.operations.NEWARRAY);
 		//TODO To implement for other types

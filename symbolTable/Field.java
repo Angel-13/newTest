@@ -24,6 +24,8 @@ public class Field {
 	
 	private int size;
 	
+	private int value;
+	
 	public Field(Type type, String name, Class clazz, Token t){
 		this.name = name;
 		this.type = type;
@@ -34,6 +36,7 @@ public class Field {
 		this.isFinal = false;
 		this.token = t;
 		this.size = 0;
+		this.value = 0;
 	}
 	
 	public Field(Type type, String name, Class clazz, boolean isStatic, boolean isPrivate, boolean isFinal, Token t){
@@ -46,6 +49,7 @@ public class Field {
 		this.isFinal = isFinal;
 		this.token = t;
 		this.size = 0;
+		this.value = 0;
 	}
 
 	public String getName() {
@@ -84,7 +88,15 @@ public class Field {
 		return this.size;
 	}
 	
+	public int getValue(){
+		return this.value;
+	}
+	
 	public void setSize(int size){
 		this.size = size;
+	}
+	
+	public void setValue(int i){
+		this.value = i;
 	}
 }

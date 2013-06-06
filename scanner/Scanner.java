@@ -152,9 +152,9 @@ public class Scanner {
 				if (this.reader.lookAhead() == '&')
 				{
 					this.reader.readNext();
-					return new Token(tokens.AND, new Position(this.reader.getPosition().raw, this.reader.getPosition().column - 2));
+					return new Token(tokens.AND, "&&", new Position(this.reader.getPosition().raw, this.reader.getPosition().column - 2));
 				}
-			return new Token(tokens.AND, new Position(this.reader.getPosition().raw, this.reader.getPosition().column - 1));
+			return new Token(tokens.AND, "&", new Position(this.reader.getPosition().raw, this.reader.getPosition().column - 1));
 		}
 		if (c == '"')
 		{

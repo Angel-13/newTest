@@ -159,7 +159,6 @@ public class ByteReader {
 			//TODO Parse intefrace
 		}
 		int fieldCounter = this.lfc.readNext() * 256 + this.lfc.readNext();
-		
 		if(fieldCounter != 0){
 			return this.parseFields(fieldOrMethodName, clazz, fieldCounter);
 		}else{
@@ -280,10 +279,13 @@ public class ByteReader {
 				counterSize--;
 			}else if(this.op.IADD == c){
 				counterSize--;
+			}else if(this.isIstore(c)){
+				counterSize--;
 			}
 			if(maxSize < counterSize){
 				maxSize = counterSize;
 			}
+			//System.out.println(counterSize);
 		}
 		return maxSize;
 	}
@@ -332,6 +334,21 @@ public class ByteReader {
 		}else if(this.op.ASTORE_2== c){
 			return true;
 		}else if(this.op.ASTORE_3== c){
+			return true;
+		}
+	return false;
+	}
+	
+	private boolean isIstore(int c) {
+		if(this.op.ISTORE == c){
+			return true;
+		}else if(this.op.ISTORE_0 == c){
+			return true;
+		}else if(this.op.ISTORE_1 == c){
+			return true;
+		}else if(this.op.ISTORE_2== c){
+			return true;
+		}else if(this.op.ISTORE_3== c){
 			return true;
 		}
 	return false;

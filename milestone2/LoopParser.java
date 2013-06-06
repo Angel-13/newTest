@@ -1,14 +1,13 @@
 package milestone2;
 
 import Code.Expression;
-import compileTable.ByteWriter;
-import compileTable.Operations;
 
 import symbolTable.ExpressionsList;
 import symbolTable.Field;
 import symbolTable.Method;
 import symbolTable.ParameterList;
-import symbolTable.StackMapTable;
+import symbolTable.StackMapTableList;
+import symbolTable.StackMapTableObject;
 import symbolTable.Type;
 import tokens.Token;
 import tokens.Tokens;
@@ -30,14 +29,14 @@ public class LoopParser implements BodyParser{
 	
 	private final ParameterList pList;
 	
-	private ByteWriter bWriter;
-	
 	private ExpressionsList expressions;
 	
-	private final StackMapTable stackmap;
+	private final StackMapTableList stackmap;
+	
+	private int startPos;
 	
 	
-	public LoopParser(Method m, Parser p){
+	public LoopParser(Method m, Parser p, int start){
 		this.method = m;
 		this.parser = p;
 		this.tks = new Tokens();
@@ -45,9 +44,9 @@ public class LoopParser implements BodyParser{
 		this.pList= new ParameterList();
 		this.ifparser = null;
 		this.loopparser = null;
-		this.bWriter = new ByteWriter();
-		this.stackmap = new StackMapTable();
+		this.stackmap = this.method.getStackMapTableList();
 		this.expressions = new ExpressionsList();
+		this.startPos = start;
 	}
 	
 /***************************************************************************************
@@ -56,19 +55,57 @@ public class LoopParser implements BodyParser{
  **************************************************************************************/
 	public boolean parse() {
 		
-		/********************************************************************************/
-		this.stackmap.add(this.method.getStartOfLoopPosition());
-		/*******************************************************************************/
+		StackMapTableObject stcObj = new StackMapTableObject(startPos, this.method.getStackFrameFieldCounter());
+		if(!this.method.getStackFrameFieldCounter().isEmpty()){
+			stcObj.makeAppendFrame(this.method);
+			this.method.getStackFrameFieldCounter().clear();
+		}else{
+			stcObj.makeSameFrame();
+		}
+		this.method.addToStackMapTableList(stcObj);
+		
 		boolean b = true;
 		Token t = this.expected(new Token(this.tks.ROUND_BRACKET_OPEN, "("));
 		if(this.iskCorrectToken(t)){
 			ExpressionParser expression = new ExpressionParser(this.parser, this);
 			b = expression.parseLogicalExpression(this.method);
 			if(b){
+				if(!this.parser.getError()){
+					expression.addLogicalFieldWriter(this.method);
+				}
+				while(this.isNextTokenLogicOperatot()){
+					String s = this.parser.getLfc().readNextToken().getText();
+					expression.addString(s);
+					if(this.isNextToken(new Token(this.tks.ROUND_BRACKET_OPEN))){
+						this.expected(new Token(this.tks.ROUND_BRACKET_OPEN, "("));
+						b = expression.parseLogicalExpression(this.method);
+						if(b){
+							Token closeBracket = this.expected(new Token(this.tks.ROUND_BRACKET_CLOSE, ")"));
+							if(closeBracket.getToken() == -1){
+								this.parser.getLfc().readNextToken();
+								this.expected(new Token(this.tks.SEMICOLON, ";"));
+								b = false;
+							}
+						}
+					}else{
+						b = expression.parseLogicalExpression(this.method);
+					}
+					if(!this.parser.getError()){
+						expression.addLogicalFieldWriter(this.method);
+					}
+				}
 				
+				if(b){
+					Token closeBracket = this.expected(new Token(this.tks.ROUND_BRACKET_CLOSE, ")"));
+					if(closeBracket.getToken() == -1){
+						this.parser.getLfc().readNextToken();
+						this.expected(new Token(this.tks.SEMICOLON, ";"));
+						b = false;
+					}
+				}
+					
 				t = this.expected(new Token(this.tks.CURLY_BRACKET_OPEN, "{"));
 				if(this.iskCorrectToken(t)){
-					expression.addLogicalFieldWriter(this.method);
 					b = this.parsewhileBody();
 				}else{
 					this.parser.getLfc().readNextToken();
@@ -83,7 +120,6 @@ public class LoopParser implements BodyParser{
 		}
 		return b;
 	}
-	//DO TUKAAAAAAA
 
 	public void print() {
 		// TODO Auto-generated method stub
@@ -98,22 +134,24 @@ public class LoopParser implements BodyParser{
 		boolean b = true;
 		while(!this.isNextToken(new Token(this.tks.CURLY_BRACKET_CLOSE))){
 			if(this.isNextToken()){
+				
 				b = this.prepareForParseExpression();
 				if(!b){
 					break;
 				}
+				
 			}else if(this.isNextToken(new Token(this.tks.IF))){
 				this.expected(new Token(this.tks.IF));
-				this.ifparser = new IfParser(this.method, this.parser);
+				int startForIf = this.getLengthFromAllExpressions() + 2;
+				this.ifparser = new IfParser(this.method, this.parser, startForIf);
 				b = this.ifparser.parse();
 				if(!b){
 					break;
 				}
-				//System.out.println(this.ifparser.getLengthFromAllExpressions());
 				this.addExpresssionsFromIfPasres(this.ifparser.getExpressions());
 			}else if(this.isNextToken(new Token(this.tks.WHILE))){
 				this.expected(new Token(this.tks.WHILE));
-				this.loopparser = new LoopParser(this.method, this.parser);
+				//this.loopparser = new LoopParser(this.method, this.parser);
 				b = this.loopparser.parse();
 				if(!b){
 					break;
@@ -138,11 +176,27 @@ public class LoopParser implements BodyParser{
 		}
 		
 		if(b){
+			this.ifparser.getByteWriter().printByteArray();
 			int value = this.getLengthFromAllExpressions() + 2;
+			//System.out.println(value);
+			
+			//Writing code for goto(0xa7) from while loop
 			this.expressions.get(this.expressions.size()-1).getExpressionCode().write1Byte(0xa7);
 			this.expressions.get(this.expressions.size()-1).getExpressionCode().write2Byte(65536 - value);
 			value = this.getLengthFromAllExpressions() + 2 - (this.expressions.get(0).getExpressionCode().size()-1);
+			
+			//System.out.println(value);
 			this.expressions.get(0).getExpressionCode().write2Byte(value);
+			int stackMapTableListSize = this.method.getStackMapTableList().size();
+			if(stackMapTableListSize > 1){
+				value = this.getLengthFromAllExpressions()-1 - this.method.getStackMapTableList().get(stackMapTableListSize-1).getPosition() - 1 ;
+			}else{
+				value = this.getLengthFromAllExpressions()-1;
+			}
+			StackMapTableObject stcObj = new StackMapTableObject(value, this.method.getStackFrameFieldCounter());
+			stcObj.makeSameFrame();
+			this.method.addToStackMapTableList(stcObj);
+			
 			/*for(int i = 0; i < this.expressions.size(); i++){
 				this.bWriter.writeAll(this.expressions.get(i).getExpressionCode());
 			}
@@ -157,8 +211,8 @@ public class LoopParser implements BodyParser{
  *  	- 
  **************************************************************************************/
 	private void addExpresssionsFromIfPasres(ExpressionsList ex) {
-		int startposition = this.expressions.get(0).getExpressionCode().size()+2;
-		this.ifparser.setElsePosition(startposition, true);
+		//int startposition = this.expressions.get(0).getExpressionCode().size()+2;
+		//this.ifparser.setElsePosition(startposition, true);
 		//System.out.println(this.ifparser.getLengthFromAllExpressions());
 		//this.stackmap.add(this.ifparser.getLengthFromAllExpressions());
 		//THIS IS GUILTY ONLY FOR IF ELSE AND NOTHING ELSE IN WHILE LOOP
@@ -193,7 +247,17 @@ public class LoopParser implements BodyParser{
 			ExpressionParser expression = new ExpressionParser(this.parser, this);
 			b = expression.parseExpression(this.method, f, true, true);
 			if(b){
-				expression.addArithmeticFieldWriter(this.method);
+				expression.addArithmeticFieldWriter(this.method, f);
+			}
+		}else if(this.isNextToken(new Token(this.tks.DOT))){
+			this.parser.getLfc().readNextToken();
+			ReferenceCallParser refCall = new ReferenceCallParser(this.parser.getLfc(), this.method.getClazz(), this.parser.getError(), this.parser);
+			try {
+				b = refCall.parseMethodOrFieldCall(type, this.method, this);
+				
+			} catch (Exception e) {
+				System.out.println("ERROR AT REFERENCE CALL PARSER!!!");
+				e.printStackTrace();
 			}
 		}else{
 			Token name = this.expected(new Token(this.tks.IDENTIFIER, "Identifier"));
@@ -212,7 +276,7 @@ public class LoopParser implements BodyParser{
 							b = false;
 						}else{
 							this.pList.addParameter(s);
-							expression.addArithmeticFieldWriter(this.method);
+							expression.addArithmeticFieldWriter(this.method, s);
 							b = true;
 						}
 					}
@@ -305,7 +369,7 @@ public class LoopParser implements BodyParser{
 		return false;
 	}
 /***************************************************************************************
- *  isContainingField(String name) 
+ *  IfParser getIfParser() 
  *  	-
  **************************************************************************************/
 	public IfParser getIfParser() 
@@ -321,7 +385,10 @@ public class LoopParser implements BodyParser{
 		return this.expressions;
 	}
 	
-/**********************************************************************************************************************************************************************/
+/***************************************************************************************
+ *  int getLengthFromAllExpressions()
+ *  	- 
+ **************************************************************************************/
 	public int getLengthFromAllExpressions() {
 		int number = 0;
 		for(int i = 0; i < this.expressions.size(); i++){
@@ -329,84 +396,23 @@ public class LoopParser implements BodyParser{
 		}
 		return number;
 	}
-	
-	public void setElsePosition(int startPosition){
-		if(this.expressions.size() <= 1){
-			int i = this.expressions.get(0).getExpressionCode().size();
-			this.expressions.get(0).getExpressionCode().write2Byte(startPosition+i);
-			this.stackmap.add(startPosition+i);
-		}else{
-			Operations operations = new Operations();
-			//int number = this.getLengthFromAllExpressions();
-			this.expressions.get(0).getExpressionCode().write2Byte(this.stackmap.get(1));
-			this.expressions.get(1).getExpressionCode().write1Byte(operations.GOTO);
-			this.expressions.get(1).getExpressionCode().write2Byte(this.stackmap.get(0));
-		}
-		
-		
-		//this.makeTheRealStackMapTable();
-		
-	}
-/***************************************************************************************
- *  makeTheRealStackMapTable()
- *  	-
- **************************************************************************************/
-	public void makeStackMapTable() {
-		for(int i = 0; i < this.expressions.size(); i++){
-			this.bWriter.writeAll(this.expressions.get(i).getExpressionCode());
-		}
-		for(int i = 0; i < this.bWriter.size(); i++){
-			if((this.bWriter.getByteArray()[i]+256)== 0xa7){
-				if(this.stackmap.size()<=1){
-					this.stackmap.add(i+2);
-				}else{
-					int number = i+1 - this.stackmap.get(this.stackmap.size()-1);
-					this.stackmap.add(number);
-				}
-			}
-		}
-	}
-
 /***************************************************************************************
  *  getStackMapTable()
  *  	-
  **************************************************************************************/
-	public StackMapTable getStackMapTable() 
+	public StackMapTableList getStackMapTable() 
 	{
 		return this.stackmap;
 	}
-	
-/***************************************************************************************
- *  printStackMapTable()
- *  	-
- **************************************************************************************/
-	public void printStackMapTable() 
-	{
-		for(int i = 0; i < this.stackmap.size(); i++){
-			System.out.println(this.stackmap.get(i));
+/******************************************************************************************************************
+ *  boolean isNextTokenLogicOperatot()
+ *  	- 
+ *********************************************************************************************************************/
+	private boolean isNextTokenLogicOperatot() {
+		if((this.parser.getLfc().lookAhead().getToken() == this.tks.AND) || (this.parser.getLfc().lookAhead().getToken() == this.tks.OR)){
+			return true;
 		}
+		return false;
 	}
-/***************************************************************************************
- *  makeByteWriter(int startPosition)
- *  	-
- **************************************************************************************/
-	public void makeByteWriter(int startPosition) {
-		Operations operations = new Operations();
-		int number = this.getLengthFromAllExpressions();
-		this.stackmap.add(startPosition+number+2+2);
-		System.out.println(this.stackmap.get(1));
-		this.expressions.get(0).getExpressionCode().write2Byte(this.stackmap.get(1)-1);
-		this.expressions.get(1).getExpressionCode().write1Byte(operations.GOTO);
-		number = startPosition + this.getLengthFromAllExpressions()-1;
-		System.out.println(number);
-		this.expressions.get(1).getExpressionCode().write2Byte(65536 - number);
-		
-		for(int i = 0; i < this.expressions.size(); i++){
-			this.bWriter.writeAll(this.expressions.get(i).getExpressionCode());
-		}
-		this.bWriter.printByteArray();
-		//this.makeTheRealStackMapTable();
-	}
-
 	
 }

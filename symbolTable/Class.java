@@ -1,9 +1,5 @@
 package symbolTable;
 
-import java.io.File;
-
-import tokens.Token;
-
 import mapsTable.ClassIntMap;
 import mapsTable.FieldIntMap;
 
@@ -37,22 +33,8 @@ public class Class {
 	private final FieldIntMap fieldIntMap;
 	
 	public int counter;
-
-	
-	//private final ConstantPool cp;
-	
-	//private final StringArrayList strings;
-	
-	//private MethodArrayList noYetParsedMethods;
-	
-	//private ScopeArrayList notYetParsedMethodToWhichScope;
-	
-	//private final ClassFile classFile;
 	
 	public Class(String name, Class superClass, String packageName, String filePath){
-		
-		//this.classFile = new ClassFile(this);
-		//this.strings = new StringArrayList();
 		this.importedClasses = new ClassArrayList();
 		this.methods = new MethodArrayList();
 		this.fields = new FieldArrayList();
@@ -67,16 +49,10 @@ public class Class {
 		this.fieldReferences = new FieldArrayList();
 		this.fieldIntMap = new FieldIntMap();
 		this.counter = 1;
-		//this.cp = new ConstantPool(this);
-		//this.notYetParsedMethodToWhichScope = new ScopeArrayList();
-		//this.noYetParsedMethods = new MethodArrayList();
 		this.addInitMethod();
 	}
 
 	public Class(String name, Class superClass, String filePath){
-		
-		//this.classFile = new ClassFile(this);
-		//this.strings = new StringArrayList();
 		this.importedClasses = new ClassArrayList();
 		this.methods = new MethodArrayList();
 		this.fields = new FieldArrayList();
@@ -91,21 +67,8 @@ public class Class {
 		this.fieldReferences = new FieldArrayList();
 		this.fieldIntMap = new FieldIntMap();
 		this.counter = 1;
-		//this.cp = new ConstantPool(this);
-		//this.notYetParsedMethodToWhichScope = new ScopeArrayList();
-		//this.noYetParsedMethods = new MethodArrayList();
 		this.addInitMethod();
 	}
-	
-	
-	
-	/*private void addInitMethod() {
-		Method m = new Method(null, "<init>", new Type(4), new ParameterList(), this.superClass, false, false);
-		this.methods.add(m);
-		//this.classFile.getConstatnPool().addMethodMap(m);
-		
-	}*/
-
 
 
 /**************************************************************************************
@@ -383,6 +346,15 @@ public class Class {
 		for(int i=0; i< this.fieldReferences.size();i++){
 			if(this.fieldReferences.get(i).getName().equals(fieldOrMethodName)){
 				return this.fieldReferences.get(i);
+			}
+		}
+		return null;
+	}
+	
+	public Class getUsedClassByName(String className) {
+		for(int i=0; i< this.usedClasses.size(); i++){
+			if(this.usedClasses.get(i).getName().equals(className)){
+				return this.usedClasses.get(i);
 			}
 		}
 		return null;

@@ -7,11 +7,11 @@ import symbolTable.ExpressionsList;
 import symbolTable.Field;
 import symbolTable.Method;
 import symbolTable.ParameterList;
-import symbolTable.StackMapTable;
+import symbolTable.StackMapTableList;
+import symbolTable.StackMapTableObject;
 import symbolTable.Type;
 import tokens.Token;
 import tokens.Tokens;
-import compileTable.Operations;
 
 public class IfParser implements BodyParser {
 	
@@ -35,9 +35,11 @@ public class IfParser implements BodyParser {
 	
 	private ExpressionsList expressions;
 	
-	private final StackMapTable stackmap;
+	private final StackMapTableList stackmap;
 	
-	public IfParser(Method m, Parser p){
+	private int startPos;
+	
+	public IfParser(Method m, Parser p, int start){
 		this.method = m;
 		this.parser = p;
 		this.tks = new Tokens();
@@ -48,7 +50,8 @@ public class IfParser implements BodyParser {
 		this.expectingElse = false;
 		this.bWriter = new ByteWriter();
 		this.expressions = new ExpressionsList();
-		this.stackmap = new StackMapTable();
+		this.stackmap = new StackMapTableList();
+		this.startPos = start;
 	}
 	
 	public boolean parse() {
@@ -57,19 +60,54 @@ public class IfParser implements BodyParser {
 		if(this.iskCorrectToken(t)){
 			ExpressionParser expression = new ExpressionParser(this.parser, this);
 			b = expression.parseLogicalExpression(this.method);
-			
 			if(b){
-				
-				t = this.expected(new Token(this.tks.CURLY_BRACKET_OPEN, "{"));
-				if(this.iskCorrectToken(t)){
-					this.expectingElse = true;
-					expression.addLogicalFieldWriter(this.method);
-					b = this.parseIfElseBody();
-				}else{
-					this.parser.getLfc().readNextToken();
-					this.expected(new Token(this.tks.SEMICOLON, ";"));
-					b=false;
-				}
+					if(!this.parser.getError()){
+						expression.addLogicalFieldWriter(this.method);
+					}
+					Token logicalOperator = new Token(-1);
+					
+					while(this.isNextTokenLogicOperatot()){
+						logicalOperator = this.parser.getLfc().readNextToken();
+						//String s = this.parser.getLfc().readNextToken().getText();
+						//expression.addString(s);
+						 expression.addString("");
+						if(this.isNextToken(new Token(this.tks.ROUND_BRACKET_OPEN))){
+							this.expected(new Token(this.tks.ROUND_BRACKET_OPEN, "("));
+							b = expression.parseLogicalExpression(this.method);
+							if(b){
+								Token closeBracket = this.expected(new Token(this.tks.ROUND_BRACKET_CLOSE, ")"));
+								if(closeBracket.getToken() == -1){
+									this.parser.getLfc().readNextToken();
+									this.expected(new Token(this.tks.SEMICOLON, ";"));
+									b = false;
+								}
+							}
+						}else{
+							b = expression.parseLogicalExpression(this.method);
+						}
+						if(!this.parser.getError()){
+							expression.addLogicalFieldWriter(this.method);
+						}
+					}
+					
+					if(b){
+						Token closeBracket = this.expected(new Token(this.tks.ROUND_BRACKET_CLOSE, ")"));
+						if(closeBracket.getToken() == -1){
+							this.parser.getLfc().readNextToken();
+							this.expected(new Token(this.tks.SEMICOLON, ";"));
+							b = false;
+						}
+					}
+					
+					t = this.expected(new Token(this.tks.CURLY_BRACKET_OPEN, "{"));
+					if(this.iskCorrectToken(t)){
+						this.expectingElse = true;
+						b = this.parseIfElseBody(logicalOperator);
+					}else{
+						this.parser.getLfc().readNextToken();
+						this.expected(new Token(this.tks.SEMICOLON, ";"));
+						b=false;
+					}
 			}
 		}else{
 			this.parser.getLfc().readNextToken();
@@ -84,7 +122,7 @@ public class IfParser implements BodyParser {
  *  	- return true if the token t is not an unknown token
  *  	- otherwise false
  **************************************************************************************/
-	private boolean parseIfElseBody() {
+	private boolean parseIfElseBody(Token logicalOperator) {
 		boolean b = true;
 		while(!this.isNextToken(new Token(this.tks.CURLY_BRACKET_CLOSE))){
 			if(this.isNextToken()){
@@ -94,14 +132,14 @@ public class IfParser implements BodyParser {
 				}
 			}else if(this.isNextToken(new Token(this.tks.IF))){
 				this.expected(new Token(this.tks.IF));
-				this.ifparser = new IfParser(this.method, this.parser);
+				//this.ifparser = new IfParser(this.method, this.parser);
 				b = this.ifparser.parse();
 				if(!b){
 					break;
 				}
 			}else if(this.isNextToken(new Token(this.tks.WHILE))){
 				this.expected(new Token(this.tks.WHILE));
-				this.loopparser = new LoopParser(this.method, this.parser);
+				//this.loopparser = new LoopParser(this.method, this.parser);
 				b = this.loopparser.parse();
 				if(!b){
 					break;
@@ -124,18 +162,92 @@ public class IfParser implements BodyParser {
 				this.expected(new Token(this.tks.SEMICOLON,	";"));
 			}
 		}
-		//System.out.println(this.parser.getLfc().lookAhead()+ "  "+this.parser.getLfc().lookAhead().getTokenPosition().raw);
-		
-		//TUKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-		//System.out.println(this.parser.getLfc().getCurrentToken()+ "  "+this.parser.getLfc().getCurrentToken().getTokenPosition().raw);
-		//System.out.println(this.parser.getLfc().lookAhead()+ "  "+this.parser.getLfc().lookAhead().getTokenPosition().raw);
 		if(b && this.isNextToken(new Token(this.tks.ELSE)) && this.expectingElse){
 			this.expected(new Token(this.tks.ELSE));
-			this.stackmap.add(this.getLengthFromAllExpressions());
-			b = this.parseElse();
-			if(b){
-				this.stackmap.add(this.getLengthFromAllExpressions()-1);
+			int value;
+			if(!this.parser.getError()){
+				int stackMapTableListSize = this.method.getStackMapTableList().size();
+				
+				
+				if(logicalOperator.getToken() != -1){
+					value = this.getLengthFromAllExpressions() + 2 - (this.expressions.get(0).getExpressionCode().size()-1) + 5;
+					this.expressions.get(0).getExpressionCode().write2Byte(value);
+					value = value - (this.expressions.get(0).getExpressionCode().size() + this.expressions.get(1).getExpressionCode().size())+2 + 1;
+					this.expressions.get(1).getExpressionCode().write2Byte(value);
+				}else{
+					value = this.getLengthFromAllExpressions() + 2 - (this.expressions.get(0).getExpressionCode().size()-1) + 3;
+					this.expressions.get(0).getExpressionCode().write2Byte(value);
+				}
+				if(stackMapTableListSize > 1){
+					value =  this.startPos +  this.getLengthFromAllExpressions()-1 + 3;
+				}else{
+					value =  this.startPos +  this.getLengthFromAllExpressions() + 3;
+					
+				}
+				/*if(!this.method.getStackMapTableList().isEmpty()){
+					this.startPos = this.startPos +  this.getLengthFromAllExpressions() - 1 + 3;
+					System.out.println(this.startPos);
+				}else{
+					this.startPos = this.startPos +  this.getLengthFromAllExpressions() + 3;
+				}*/
+				StackMapTableObject stcObj = new StackMapTableObject(value, this.method.getStackFrameFieldCounter());
+				if(!this.method.getStackFrameFieldCounter().isEmpty()){
+					stcObj.makeAppendFrame(this.method);
+					this.method.getStackFrameFieldCounter().clear();
+				}else{
+					stcObj.makeSameFrame();
+				}
+				this.method.addToStackMapTableList(stcObj);
 			}
+			int expressionListSizeBefore = this.expressions.size()-1;
+			this.expressions.get(expressionListSizeBefore).getExpressionCode().write1Byte(0xa7);
+
+			b = this.parseElse();			
+			
+			if(!this.parser.getError()){
+				value = this.getLengthFromAllExpressionsFromNumber(expressionListSizeBefore) + 2 + 1;
+				this.expressions.get(expressionListSizeBefore).getExpressionCode().write2Byte(value);
+				
+				int stackMapTableListSize = this.method.getStackMapTableList().size();
+				if(stackMapTableListSize > 1){
+					value = this.getLengthFromAllExpressions()-1 - this.method.getStackMapTableList().get(stackMapTableListSize-1).getPosition() - 1 ;
+				}else{
+					//value = this.startPos + this.getLengthFromAllExpressions()-1;
+					value = this.startPos + this.expressions.get(this.expressions.size()-1).getExpressionCode().size()-1;
+				}
+				StackMapTableObject stcObj = new StackMapTableObject(value, this.method.getStackFrameFieldCounter());
+				if(!this.method.getStackFrameFieldCounter().isEmpty()){
+					stcObj.makeAppendFrame(this.method);
+					this.method.getStackFrameFieldCounter().clear();
+				}else{
+					stcObj.makeSameFrame();
+				}
+				this.method.addToStackMapTableList(stcObj);
+			}
+			
+		}else if(!this.parser.getError() && this.expectingElse){
+			int value = this.getLengthFromAllExpressions() + 2 - (this.expressions.get(0).getExpressionCode().size()-1);
+			this.expressions.get(0).getExpressionCode().write2Byte(value);
+			int stackMapTableListSize = this.method.getStackMapTableList().size();
+			if(stackMapTableListSize > 1){
+				value = this.getLengthFromAllExpressions()-1 - this.method.getStackMapTableList().get(stackMapTableListSize-1).getPosition() - 1 ;
+			}else{
+				value = this.startPos + this.getLengthFromAllExpressions()-1;
+			}
+			/*System.out.println(this.startPos+ "    TUJKAAAAAA");
+			if(!this.method.getStackMapTableList().isEmpty()){
+				this.startPos = this.startPos +  this.getLengthFromAllExpressions() - 1;
+			}else{
+				this.startPos = this.startPos +  this.getLengthFromAllExpressions();
+			}*/
+			StackMapTableObject stcObj = new StackMapTableObject(value, this.method.getStackFrameFieldCounter());
+			if(!this.method.getStackFrameFieldCounter().isEmpty()){
+				stcObj.makeAppendFrame(this.method);
+				this.method.getStackFrameFieldCounter().clear();
+			}else{
+				stcObj.makeSameFrame();
+			}
+			this.method.addToStackMapTableList(stcObj);
 		}
 		this.pList = new ParameterList();
 		return b;
@@ -154,13 +266,15 @@ public class IfParser implements BodyParser {
 			this.expected(new Token(this.tks.CURLY_BRACKET_OPEN, "{"));
 			this.pList = new ParameterList();
 			this.expectingElse = false;
-			b = this.parseIfElseBody();
+			this.startPos = 0;
+			b = this.parseIfElseBody(new Token(-1));
 		}else{
 			this.expected(new Token(this.tks.IF, "if"), new Token(this.tks.CURLY_BRACKET_OPEN,"{"));
 			this.parser.getLfc().readNextToken();
 			this.expected(new Token(this.tks.SEMICOLON, ";"));
 			b = false;
 		}
+		
 		return b;
 	}
 
@@ -184,7 +298,17 @@ public class IfParser implements BodyParser {
 			ExpressionParser expression = new ExpressionParser(this.parser, this);
 			b = expression.parseExpression(this.method, f, true, true);
 			if(b){
-				expression.addArithmeticFieldWriter(this.method);
+				expression.addArithmeticFieldWriter(this.method, f);
+			}
+		}else if(this.isNextToken(new Token(this.tks.DOT))){
+			this.parser.getLfc().readNextToken();
+			ReferenceCallParser refCall = new ReferenceCallParser(this.parser.getLfc(), this.method.getClazz(), this.parser.getError(), this.parser);
+			try {
+				b = refCall.parseMethodOrFieldCall(type, this.method, this);
+				
+			} catch (Exception e) {
+				System.out.println("ERROR AT REFERENCE CALL PARSER!!!");
+				e.printStackTrace();
 			}
 		}else{
 			Token name = this.expected(new Token(this.tks.IDENTIFIER, "Identifier"));
@@ -203,7 +327,7 @@ public class IfParser implements BodyParser {
 							b = false;
 						}else{
 							this.pList.addParameter(s);
-							expression.addArithmeticFieldWriter(this.method);
+							expression.addArithmeticFieldWriter(this.method, s);
 							b = true;
 						}
 					}
@@ -382,53 +506,19 @@ public class IfParser implements BodyParser {
 		return number;
 	}
 	
-	public void setElsePosition(int loopLength, boolean isLoopCall){
-		if(this.expressions.size() <= 1){
-			int i = this.expressions.get(0).getExpressionCode().size();
-			//this.expressions.get(0).getExpressionCode().write2Byte(startPosition+i);
-			//this.stackmap.add(startPosition+i);
-		}else{
-			Operations operations = new Operations();
-			
-			this.expressions.get(0).getExpressionCode().write2Byte(this.stackmap.get(1));
-			this.expressions.get(1).getExpressionCode().write1Byte(operations.GOTO);
-			int number = this.expressions.get(0).getExpressionCode().size()+ this.expressions.get(1).getExpressionCode().size();
-			if(isLoopCall){
-				//System.out.println("LIIIIIII " + loopLength + "  " + number + " " + this.expressions.get(0).getExpressionCode().size() + "  " + this.expressions.get(1).getExpressionCode().size());
-				//this.expressions.get(0).getExpressionCode().printByteArray();
-				
-				this.expressions.get(1).getExpressionCode().write2Byte(65536 - (number - 1 + loopLength));
-			}else{
-				this.expressions.get(1).getExpressionCode().write2Byte(this.stackmap.get(0));
-			}
+	public int getLengthFromAllExpressionsFromNumber(int from) {
+		int number = 0;
+		for(int i = from + 1; i < this.expressions.size(); i++){
+			number = number + this.expressions.get(i).getExpressionCode().size();
 		}
-		/*for(int i = 0; i < this.expressions.size(); i++){
-			this.bWriter.writeAll(this.expressions.get(i).getExpressionCode());
-		}*/
-		//this.bWriter.printByteArray();
-		//this.makeTheRealStackMapTable(startPosition);
-		
-	}
-/***************************************************************************************
- *  makeTheRealStackMapTable()
- *  	-
- **************************************************************************************/
-	private void makeTheRealStackMapTable(int startpostition) {
-		int number1 = this.stackmap.get(0);
-		int number2 = this.stackmap.get(1) - number1 + 1;
-		this.stackmap.remove(1);
-		this.stackmap.remove(0);
-		int num = number1 + number2 + 1 + startpostition;
-		int num1 = number2-1;
-		this.stackmap.add(num);
-		this.stackmap.add(num1);
+		return number;
 	}
 
 /***************************************************************************************
  *  getStackMapTable()
  *  	-
  **************************************************************************************/
-	public StackMapTable getStackMapTable() 
+	public StackMapTableList getStackMapTable() 
 	{
 		return this.stackmap;
 	}
@@ -442,6 +532,22 @@ public class IfParser implements BodyParser {
 		for(int i = 0; i < this.stackmap.size(); i++){
 			System.out.println(this.stackmap.get(i));
 		}
+	}
+	
+	public void makeByteWriter() {
+		for(int i = 0; i < this.expressions.size(); i++){
+			this.bWriter.writeAll(this.expressions.get(i).getExpressionCode());
+		}
+	}
+/******************************************************************************************************************
+ *  boolean isNextTokenLogicOperatot()
+ *  	- 
+ *********************************************************************************************************************/
+	private boolean isNextTokenLogicOperatot() {
+		if((this.parser.getLfc().lookAhead().getToken() == this.tks.AND) || (this.parser.getLfc().lookAhead().getToken() == this.tks.OR)){
+			return true;
+		}
+		return false;
 	}
 
 }

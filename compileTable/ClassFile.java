@@ -31,9 +31,11 @@ public class ClassFile {
 		this.operations = new Operations();
 		this.makeStartJavaCode();
 		this.make();
+
 		OutputStream f;
+		
 		try {
-			f = new FileOutputStream (this.clazz.getFilePath() + name);
+			f = new FileOutputStream ("C:\\Users\\User\\Desktop\\Compiler Tests\\" + name);
 			this.code.writeTo(f);
 			f.close();
 		} catch (IOException e) {
@@ -108,13 +110,14 @@ public class ClassFile {
 		
 		//Methods count
 		this.code.write2Byte(this.clazz.getMethods().size());
-		
 		this.makeCodeForMethods();
+
 		this.code.write2Byte(0x01);
 		this.code.write2Byte(this.cp.getUtf8Map().get("SourceFile"));
 		this.code.write4Byte(0x02);
 		String source = this.clazz.getName() + ".java";
 		this.code.write2Byte(this.cp.getUtf8Map().get(source));
+		
 		
 	}
 	private void makeFieldsUtf8() {
@@ -186,7 +189,7 @@ public class ClassFile {
 		boolean b = true;
 		for(int i = 0; i < this.clazz.getMethods().size(); i++){
 			Method m = this.clazz.getMethods().get(i);
-			if(m.getLoopParser() ==  null){
+			if((m.getLoopParser() ==  null) && (m.getIfParser() ==  null)){
 				b = false;
 			}else{
 				b = true;
@@ -203,6 +206,7 @@ public class ClassFile {
 
 	private void makeCodeForMethods() {
 		for(int i = 0; i < this.clazz.getMethods().size(); i++){
+			
 			Method m = this.clazz.getMethods().get(i);
 			this.writeMethodAccessFlags(m);
 			this.code.write2Byte(this.cp.getUtf8Map().get(m.getName()));
@@ -214,6 +218,7 @@ public class ClassFile {
 				this.makeCodeForMethod(m);
 			}
 		}
+
 		
 	}
 
@@ -249,14 +254,17 @@ public class ClassFile {
 		b.write4Byte(method.getByteWriter().size());
 		b.writeAll(method.getByteWriter());
 		b.write2Byte(0x00);
-		if(method.getLoopParser() !=  null){
+		if((method.getLoopParser() !=  null) || (method.getIfParser() !=  null)){
 			b.write2Byte(1);
 			b.write2Byte(this.cp.getUtf8Map().get("StackMapTable"));
-			b.write4Byte(0x05);
-			b.write2Byte(method.getLoopParser().getStackMapTable().size());
-			for(int i = 0; i < method.getLoopParser().getStackMapTable().size(); i++){
-				b.write1Byte(method.getLoopParser().getStackMapTable().get(i));
-			}
+			b.writeAll(method.getStackMapTableCode());
+			//b.write4Byte(0x05);
+			//b.write2Byte(method.getLoopParser().getStackMapTable().size());
+			//for(int i = 0; i < method.getLoopParser().getStackMapTable().size(); i++){
+
+				
+				//b.write1Byte(method.getLoopParser().getStackMapTable().get(i));
+			//}
 		}else{
 			b.write2Byte(0);
 		}

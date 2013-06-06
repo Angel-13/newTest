@@ -77,7 +77,7 @@ public class NewExpression implements Expression{
 			b.write1Byte(this.operations.getASTROEbyNumber(i));
 		}else{
 			b.write1Byte(this.operations.ASTORE);
-			b.write2Byte(i);
+			b.write1Byte(i);
 		}
 		return b;
 	}
