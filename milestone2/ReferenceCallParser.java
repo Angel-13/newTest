@@ -140,8 +140,8 @@ public class ReferenceCallParser {
 				
 				String filePathClass = f.getClazz().getFilePath() + f.getClazz().getName() + ".class";
 				String filePathJava = f.getClazz().getFilePath() + f.getClazz().getName() + ".java";
-				//System.out.println(filePathClass);
-				//System.out.println(filePathJava);
+				System.out.println(filePathClass);
+				System.out.println(filePathJava);
 				if(this.checkFile(filePathClass)){
 					//System.out.println(filePathClass);
 					ByteReader breader = new ByteReader(filePathClass);
