@@ -33,7 +33,6 @@ public class ClassFile {
 		
 		try {
 			f = new FileOutputStream (this.clazz.getFilePath() + name);
-			System.out.println(this.clazz.getFilePath() + name);
 			this.code.writeTo(f);
 			f.close();
 		} catch (IOException e) {
@@ -87,7 +86,7 @@ public class ClassFile {
 		this.code.writeAll(this.cp.getByteWriter());
 		//Writing the class access flags
 		this.writeAccessFlags();
-		this.code.printByteArray();
+		//this.code.printByteArray();
 		//Writing this class to the byte code output
 		this.code.write2Byte(this.cp.getClassMap().get(this.clazz));
 		//Writing the super class to the byte code output
@@ -205,7 +204,7 @@ public class ClassFile {
 				//System.out.println("Class: " +this.clazz.getMethodReferences().get(i).getClazz().getName()+ "  METHODS");
 				this.cp.addClassMap(this.clazz.getMethodReferences().get(i).getClazz());
 			}
-			this.cp.addUtf8("NameAndType:"+this.clazz.getMethodReferences().get(i).getName());
+			this.cp.addUtf8("NameAndType:"+this.clazz.getMethodReferences().get(i).getName() + this.clazz.getMethodReferences().get(i).getParametersDescriptor());
 		}
 		
 		for(int i = 0; i < this.clazz.getStringReferences().size(); i++){
@@ -240,7 +239,7 @@ public class ClassFile {
 			this.writeMethodAccessFlags(m);
 			this.code.write2Byte(this.cp.getUtf8Map().get(m.getName()));
 			this.code.write2Byte(this.cp.getUtf8Map().get(m.getParametersDescriptor()));
-			//System.out.println(m.getName()+ "   " + m.getParametersDescriptor());
+			System.out.println(m.getName()+ "   " + m.getParametersDescriptor() + "  " + m.isPrivate());
 			if(m.getName().equals("<init>")){
 				this.makeCodeForInitMethod(m);
 			}else{

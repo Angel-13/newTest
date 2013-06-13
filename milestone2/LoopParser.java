@@ -106,7 +106,6 @@ public class LoopParser implements BodyParser{
 						b = false;
 					}
 				}*/
-					
 				this.startPos = this.getLengthFromAllExpressions() + 2;
 				t = this.expected(new Token(this.tks.CURLY_BRACKET_OPEN, "{"));
 				if(this.iskCorrectToken(t)){
@@ -148,7 +147,7 @@ public class LoopParser implements BodyParser{
 				
 			}else if(this.isNextToken(new Token(this.tks.IF))){
 				this.expected(new Token(this.tks.IF));
-				int startForIf = this.getLengthFromAllExpressions() + 2;
+				int startForIf =  this.startPos + 2;
 				this.ifparser = new IfParser(this.method, this.parser, startForIf);
 				b = this.ifparser.parse();
 				if(!b){

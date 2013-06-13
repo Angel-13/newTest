@@ -41,6 +41,7 @@ public class PrintExpression implements Expression{
 		this.code.write2Byte(this.mainClass.getFieldIntMap().get(f));
 		
 		Token parameter = this.lfc.readNextToken();
+		//System.out.println(parameter.getText());
 		if(parameter.getToken() == this.tokens.IDENTIFIER){
 			Field p = this.mainMethod.getFieldByName(parameter.getText());
 			if(p.getType().isArray()){

@@ -125,8 +125,9 @@ public class ConstantPool
 			}else if(this.clazz.isNumberMappedToMethod(k)){
 				Method m = this.clazz.getMethodMappedToValue(k);
 				this.byteWriter.write1Byte(0x0a);
+				//System.out.println(m.getName() + "  " + m.getParametersDescriptor() + "  " + this.utf8Map.get("NameAndType:"+ m.getName()+m.getParametersDescriptor()));
 				this.byteWriter.write2Byte(this.classMap.get(m.getClazz()));
-				this.byteWriter.write2Byte(this.utf8Map.get("NameAndType:"+ m.getName()));
+				this.byteWriter.write2Byte(this.utf8Map.get("NameAndType:"+ m.getName()+m.getParametersDescriptor()));
 			}else{
 				String str = this.clazz.getStringdMappedToValue(k);
 				this.byteWriter.write1Byte(0x08);
@@ -183,9 +184,9 @@ public class ConstantPool
 		for(int i = 0; i < this.clazz.getFieldReferences().size(); i++){
 			
 			Field fl = this.clazz.getFieldReferences().get(i);
-			System.out.println(fl.getName());
+			//System.out.println(fl.getName());
 			if(!allreadyAddedCLasses.contains(fl.getClazz().getName())){
-				System.out.println(fl.getClazz().getName());
+				//System.out.println(fl.getClazz().getName());
 				allreadyAddedCLasses.add(fl.getClazz().getName());
 				this.byteWriter.write1Byte(0x07);
 				this.byteWriter.write2Byte(this.utf8Map.get(fl.getClazz().getName()));
@@ -198,9 +199,9 @@ public class ConstantPool
 
 		for(int i = 0; i < this.clazz.getMethodReferences().size(); i++){
 			Method m = this.clazz.getMethodReferences().get(i);
-			System.out.println(m.getName());
+			//System.out.println(m.getName());
 			if(!allreadyAddedCLasses.contains(m.getClazz().getName())){
-				System.out.println(m.getClazz().getName());
+				//System.out.println(m.getClazz().getName());
 				allreadyAddedCLasses.add(m.getClazz().getName());
 				this.byteWriter.write1Byte(0x07);
 				this.byteWriter.write2Byte(this.utf8Map.get(m.getClazz().getName()));

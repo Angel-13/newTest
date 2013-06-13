@@ -268,12 +268,14 @@ public class ExpressionParser {
 						//this.expected(new Token(this.tks.ROUND_BRACKET_CLOSE, ")"));
 						b = this.parseMethodCall(m.getClazz(), m, name1);
 						if(b){
+							
 							Token operator = this.expectedComparableOperator();
 							if(operator.getToken() != -1){
 								this.str = this.str + operator.getText();
 								Token name2 = this.expected(new Token(this.tks.IDENTIFIER, "Identifier"), new Token(this.tks.NUMBER, "Number"));
 								if(name2.getToken() != -1){
 									if(name2.getToken() == this.tks.IDENTIFIER){
+										
 										//TODO;
 									}else{
 										this.str = this.str + name2.getText();
@@ -350,9 +352,7 @@ public class ExpressionParser {
 					this.p.setError(true);
 				}
 			}else if(!clazz.isAllreadyContainingMethodRef(newMethod)){
-				
 				clazz.addMethodReference(newMethod);
-				
 				clazz.addToMethodsToBeCheckedIfExists(newMethod);
 			}
 		}
@@ -577,8 +577,10 @@ public class ExpressionParser {
 		if(m.isContainingFildMethodAndClassAndLoops(name1.getText(), false)){
 			Field classRef = m.findFieldInsideMethoAndClassAndScope(name1.getText());
 			if(refField1 == null){
+				
 				if(classRef.getType().isArray()){
 					b = this.parseArray(m);
+					
 				}else{
 					System.out.println("Errot at: Class ExpressionParser, method: checkReferenceFieldExistenceAndParseArrays(Method m, Token name1, Token refField1)    -> ERROR1");
 					this.p.setError(false);
@@ -684,6 +686,8 @@ public class ExpressionParser {
 			CoditionExpression ax = new CoditionExpression(lfc, m.getFieldMap(), m);
 			//System.out.println(ax.getExpressionCode().size());
 			//ax.getExpressionCode().printByteArray();
+			//ax.getExpressionCode().printByteArray();
+			//System.out.println("Ax");
 			//ax.getExpressionCode().printByteArray();
 			this.bodyParser.addExpresssion(ax);
 			//m.addExpresssion(ax);
@@ -1364,6 +1368,7 @@ public class ExpressionParser {
 							printClass = new Class("java/io/PrintStream", mainClass.getSuperClass(), "java/io/PrintStream", "java/io/");
 							mainClass.addUsedClasses(printClass);
 						}
+						
 						f = new Field(new Type(printClass), t.getText(), clazz, true, false, false, t);
 						mainClass.addFieldReference(f);
 						if(!clazz.isAllreadyContainingField(t.getText())){
@@ -1453,6 +1458,8 @@ public class ExpressionParser {
 			PrintExpression printEx = new PrintExpression(clazz, m, lfc);
 			printEx.makePrintCode();
 			if(this.bodyParser != null){
+				//printEx.getExpressionCode().printByteArray();
+				//System.out.println(this.str);
 				this.bodyParser.addExpresssion(printEx);
 			}else{
 				//TODO

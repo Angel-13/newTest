@@ -60,7 +60,9 @@ public class CoditionExpression implements Expression{
 	public ByteWriter getCode() {
 		ByteWriter b = new ByteWriter();
 		Token leftSide = this.lfc.readNextToken();
+		
 		b.writeAll(this.getCodeForIdentifeerOrNumber(leftSide, false));
+		
 		if(this.isNextTokenOperator()){
 			Token arOperator = this.lfc.readNextToken();
 			Token rSideArithmetic = this.lfc.readNextToken();
@@ -133,16 +135,16 @@ public class CoditionExpression implements Expression{
 				
 				Field f1 = this.method.findFieldInsideMethoAndClassAndScope(t1.getText());
 				if(f1.getType().isArray()){
-					/*if(this.lfc.lookAhead().getToken() != this.tokens.SQUARE_BRACKET_OPEN){
-						p.addParameter(f1);
-					}else{
-						
-					}*/
 					p.addParameter(new Field(f1.getType().getBaseType(), "", null, t1));
+					//System.out.println(t1.getText() + "   t1");
+					//System.out.println(t.getText() + "   t");
+					//p.addParameter(new Field(f1.getType().getBaseType(), "", null, t1));
+					
 					
 				}else{
 					p.addParameter(f1);
 				}
+				
 				b.writeAll(this.getCodeForIdentifeerOrNumber(t1, false));
 				if(this.isNextTokenOperator()){
 					Token arOperator = this.lfc.readNextToken();
@@ -167,6 +169,8 @@ public class CoditionExpression implements Expression{
 			b1.writeAll(b);
 			b1.write1Byte(this.operations.INVOKESTATIC);
 		}
+		//System.out.println(t.getText());
+		//b1.printByteArray();
 		b1.write2Byte(this.method.getClazz().getMethodIntMap().get(m));
 		return b1;
 	}
@@ -197,6 +201,7 @@ public class CoditionExpression implements Expression{
 				
 			}
 			b.write1Byte(this.operations.IALOAD);
+			
 			this.lfc.readNextToken();
 			
 		}else{
@@ -212,6 +217,8 @@ public class CoditionExpression implements Expression{
 		ByteWriter b = new ByteWriter();
 		Field classRef = this.method.getFieldByName(t.getText());
 		Token lenght = this.lfc.readNextToken();
+
+		//System.out.println(t.getText()  + "    "  +lenght.getText()+ "   t   " + this.lfc.lookAhead().getText());
 		b.writeAll(this.getALoadCodeForRefereceClass(classRef));
 		if(method.isContainingFildMethodAndClassAndLoops(lenght.getText(), false)){
 			Field f = method.findFieldInsideMethoAndClassAndScope(lenght.getText());
@@ -226,9 +233,11 @@ public class CoditionExpression implements Expression{
 			int number =  Integer.parseInt(lenght.getText());
 			b.writeAll(this.getCodeForPushNumber(number));
 			
+			
 		}
 		b.write1Byte(this.operations.IALOAD);
 		this.lfc.readNextToken();
+		//System.out.println(t.getText()  + "    "  +lenght.getText()+ "   t   " + this.lfc.lookAhead().getText());
 		/*Token refToken = this.lfc.readNextToken();
 		Field fieldRef = this.method.getClazz().getFieldFromFieldRef(refToken.getText());
 		Field classRef = this.method.getFieldByName(t.getText());

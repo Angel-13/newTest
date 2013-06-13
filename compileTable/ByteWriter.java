@@ -46,6 +46,12 @@ public class ByteWriter
 		}
 		return;
 	}
+	
+	public void reset()
+	{
+		this.buffer.reset();
+		return;
+	}
 
 	public void write4Byte(int value)
 	{
@@ -128,13 +134,15 @@ public class ByteWriter
 		      if (v < 16) {
 		        sb.append('0');
 		      }
-		      if(i%2==0 && i>0){
+		      if(i%2!=0){
 		    	  sb.append(Integer.toHexString(v) + " ");
 		      }else{
 		    	  sb.append(Integer.toHexString(v) + "");
 		      }
-		      if((i%40 == 0)){
-		    	  sb.append("\n");
+		      if(i!=0){
+			      if((i%40 == 0)){
+			    	  sb.append("\n");
+			      }
 		      }
 		}
 		System.out.println(sb.toString().toUpperCase());

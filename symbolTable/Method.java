@@ -479,4 +479,24 @@ public class Method {
 		}
 		return sum;
 	}
+	
+	/*public String getDescriptor(){
+		String str = "";
+		if(this.returnType.isVoid()){
+			return "(" + 
+		}else if(this.returnType.isInteger()){
+			
+		}else if(this.returnType.isVoid()){
+			
+		}else if(this.returnType.isArray()){
+			
+		}else if(this.returnType.isClass()){
+			
+		}
+		
+		
+	}*/
+	
+	
+	
 }

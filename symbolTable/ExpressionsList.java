@@ -37,4 +37,12 @@ public class ExpressionsList {
 		{
 			return this.list.toArray();
 		}
+		
+		public void clear(){
+			this.list.clear();
+		}
+		
+		public boolean isEmpty(){
+			return this.list.isEmpty();
+		}
 }
