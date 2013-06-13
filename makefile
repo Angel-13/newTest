@@ -12,4 +12,4 @@ clean:
 %.class: %.java
 	$(JC) $(sources)
 	$(JVM) $(MAIN)
-	$(JVP) $(FLAGS) $(CLASS)
+	$(JVP) $(FLAGS) $Milestone6.class
