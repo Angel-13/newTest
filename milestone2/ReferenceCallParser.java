@@ -77,7 +77,7 @@ public class ReferenceCallParser {
 			}else{
 				if(this.isNextToken(new Token(this.tks.ASSIGNMENT))){
 					this.lfc.readNextToken();
-					b = this.parseFieldCall(f, fieldOrMethodName, m, name, -1, bParser);
+					b = this.parseFieldCall(f, fieldOrMethodName, m, name, new Token(-1), bParser);
 				}else if(this.isNextToken(new Token(this.tks.ROUND_BRACKET_OPEN))){
 					//TODO IMPLEMENT METHOD CALLS
 				}else if(this.isNextToken(new Token(this.tks.SQUARE_BRACKET_OPEN))){
@@ -88,9 +88,9 @@ public class ReferenceCallParser {
 						if(t.getToken() !=-1){
 							t = this.expected(new Token(this.tks.ASSIGNMENT, "="));
 							if(t.getToken() != -1){
-								int num = Integer.parseInt(number.getText());
+								//int num = Integer.parseInt(number.getText());
 								//System.out.println(f.getName() + "   sdasdasd   " + number.getText());
-								b = this.parseFieldCall(f, fieldOrMethodName, m, name, num, bParser);
+								b = this.parseFieldCall(f, fieldOrMethodName, m, name, number, bParser);
 							}else{
 								this.lfc.readNextToken();
 								this.expected(new Token(this.tks.SEMICOLON, ";"));
@@ -130,7 +130,7 @@ public class ReferenceCallParser {
  *  		- 
  * @throws Exception 
  *******************************************************************************************/
-	private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token name, int position, BodyParser bParser) throws Exception {
+	private boolean parseFieldCall(Field f, Token fieldOrMethodName, Method m, Token name, Token position, BodyParser bParser) throws Exception {
 		boolean b = true;
 		ExpressionParser ex = new ExpressionParser(this.p, bParser);
 		if(this.clazz.isAllreadyContainingClassReference(f.getClazz().getName())){
@@ -172,7 +172,8 @@ public class ReferenceCallParser {
 				//System.out.println(fieldFromClassRef.getName() + "     "  + position);
 				//TODO Make it better(we know if fieldFromClassRef is array field or normal field)
 				if(this.isNextToken(new Token(this.tks.NEW))){
-					if(position != -1){
+					///////////////////////////////////////////////////////////////////////////////////////////////////
+					if(position.getToken() != -1){
 						this.error = true;
 						b = false;
 						System.out.println("ERROR");
@@ -191,15 +192,40 @@ public class ReferenceCallParser {
 						}
 					}
 				}else{
-					if(position != -1){
+					///////////////////////////////////////////////////////////////////////////////////////////////////
+					if(position.getToken() != -1){
 						if(fieldFromClassRef.getType().isArray()){
-							if(fieldFromClassRef.getSize() <= position){
-								this.error = true;
-								System.out.println("ERROR1");
-								//TODO PRINT THE ERROR 
+							int number = -1;
+							if(position.getToken() == this.tks.NUMBER){
+								number = Integer.parseInt(position.getText());
+							}else{
+								if(m.isContainingFildMethodAndClassAndLoops(position.getText(), false)){
+									Field fi = m.findFieldInsideMethoAndClassAndScope(position.getText());
+									if(fi.getType().isInteger()){
+										number = fi.getValue();
+									}else{
+										System.out.println("ERROR 10");
+										this.p.setError(true);
+										b = false;
+									}
+								}else{
+									System.out.println("ERROR 11");
+									this.p.setError(true);
+									b = false;
+								}								
 							}
+							/*if(b){
+								if(position.getToken() == this.)
+								if(fieldFromClassRef.getSize() <= number){
+									this.p.setError(true);
+									this.error = true;
+									System.out.println("ERROR1");
+									//TODO PRINT THE ERROR 
+								}
+							}*/
 						}else{
 							this.error = true;
+							this.p.setError(true);
 							b = false;
 							System.out.println("ERROR2");
 							//TODO PRINT THE ERROR 

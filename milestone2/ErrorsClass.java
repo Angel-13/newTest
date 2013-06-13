@@ -3,6 +3,7 @@ package milestone2;
 import symbolTable.Field;
 import symbolTable.Method;
 import symbolTable.TokenArrayList;
+import symbolTable.Type;
 import tokens.Token;
 
 public class ErrorsClass {
@@ -68,6 +69,16 @@ public class ErrorsClass {
 		System.out.println("Error at line: " + f1.getToken().getTokenPosition().raw + ", raw: "
 				+ f1.getToken().getTokenPosition().column + " , Token Name: " + f1.getName() + " Type: " + f1.getType().toString() + 
 					", is not compatible with the type " + f.getType().toString() + " of the variable " + f.getName() + "!!!");
+	}
+	
+/*******************************************************************************************
+ * void printNotCompatibleType(Field f, Token exptectedType)
+ *  	- 
+ *******************************************************************************************/	
+	public void printNotCompatibleType(Field f, Token exptectedType) {
+		System.out.println("Error at line: " + f.getToken().getTokenPosition().raw + ", raw: "
+				+ f.getToken().getTokenPosition().column + " , Token Name: " + f.getName() + " Type: " + f.getType().toString() + 
+					", is not compatible with the exptected type " + exptectedType.getText() + "!!!");
 	}
 /*******************************************************************************************
  *  printNotCompatibleTypes(Field f, Token t)
@@ -200,6 +211,16 @@ public class ErrorsClass {
 				+	fielRef.getToken().getTokenPosition().column + " , Field refefence " + fielRef.getName() + ", type: " + fielRef.getType().toString()  + ", expected Array!");
 	}
 
+/*******************************************************************************************
+ *  printNotCompatibleTypes(Field f, Field f1)
+ *  	- prints an error missing operator
+ *******************************************************************************************/	
+	public void printNotCompatibleRetunTypes(Token to, Method m, Type t) {
+		System.out.println("Error at line: " +to.getTokenPosition().raw + ", raw: "
+				+	to.getTokenPosition().column + " , Method : " + to.getText() + " with return type: " + m.getRetrunType().toString() + 
+					", is not compatible with the expected return type " + t.toString() + "!!!");
+	}
+	
 }
 
 

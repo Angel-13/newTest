@@ -128,8 +128,12 @@ public class ByteWriter
 		      if (v < 16) {
 		        sb.append('0');
 		      }
-		      sb.append(Integer.toHexString(v) + " ");
-		      if((i == 120) || (i ==241)){
+		      if(i%2==0 && i>0){
+		    	  sb.append(Integer.toHexString(v) + " ");
+		      }else{
+		    	  sb.append(Integer.toHexString(v) + "");
+		      }
+		      if((i%40 == 0)){
 		    	  sb.append("\n");
 		      }
 		}

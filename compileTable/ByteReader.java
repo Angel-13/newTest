@@ -281,6 +281,9 @@ public class ByteReader {
 				counterSize--;
 			}else if(this.isIstore(c)){
 				counterSize--;
+			}else if(this.isLogicalOperator(c)){
+				i = i+2;
+				counterSize = counterSize - 2;
 			}
 			if(maxSize < counterSize){
 				maxSize = counterSize;
@@ -364,6 +367,23 @@ public class ByteReader {
 		}else if(this.op.ALOAD_2== c){
 			return true;
 		}else if(this.op.ALOAD_3== c){
+			return true;
+		}
+	return false;
+	}
+	
+	private boolean isLogicalOperator(int c) {
+		if(this.op.IF_ICMPEQ == c){
+			return true;
+		}else if(this.op.IF_ICMPNE == c){
+			return true;
+		}else if(this.op.IF_ICMPLE == c){
+			return true;
+		}else if(this.op.IF_ICMPLT== c){
+			return true;
+		}else if(this.op.IF_ICMPGE== c){
+			return true;
+		}else if(this.op.IF_ICMPGT== c){
 			return true;
 		}
 	return false;

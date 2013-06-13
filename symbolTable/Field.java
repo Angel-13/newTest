@@ -39,6 +39,31 @@ public class Field {
 		this.value = 0;
 	}
 	
+	public Field(Type type, String name){
+		this.name = name;
+		this.type = type;
+		this.clas = null;
+		this.clazz = null;
+		this.isStatic = false;
+		this.isPrivate = false;
+		this.isFinal = false;
+		this.token = null;
+		this.size = 0;
+		this.value = 0;
+	}
+	
+	public Field(Type type, Token t){
+		this.name = "";
+		this.type = type;
+		this.clas = null;
+		this.clazz = null;
+		this.isStatic = false;
+		this.isPrivate = false;
+		this.isFinal = false;
+		this.token = t;
+		this.size = 0;
+		this.value = 0;
+	}
 	public Field(Type type, String name, Class clazz, boolean isStatic, boolean isPrivate, boolean isFinal, Token t){
 		this.name = name;
 		this.type = type;

@@ -1,10 +1,11 @@
 package Code;
 
 import mapsTable.FieldIntMap;
-import milestone2.BodyParser;
 import scanner.LookForwardScanner;
 import symbolTable.Field;
 import symbolTable.Method;
+import symbolTable.ParameterList;
+import symbolTable.Type;
 import tokens.Token;
 import tokens.Tokens;
 import compileTable.ByteWriter;
@@ -36,6 +37,14 @@ public class CoditionExpression implements Expression{
 		this.make();
 	}
 
+	public CoditionExpression(LookForwardScanner lfc, Method m){
+		this.operations = new Operations();
+		this.lfc = lfc;
+		this.code = new ByteWriter();
+		this.fieldsMap = m.getFieldMap();
+		this.tokens = new Tokens();
+		this.method = m;
+	}
 	private void make() {
 		this.code.writeAll(this.getCode());
 		//this.code.printByteArray();
@@ -59,7 +68,14 @@ public class CoditionExpression implements Expression{
 			b.write1Byte(this.getOperationFromArithemticOperatorToken(arOperator));
 		}
 		Token operator = this.lfc.readNextToken();
+		//System.out.println(operator.getText() +  "  OPERATOR");
 		Token rightSide = this.lfc.readNextToken();
+		if(this.isNextTokenOperator()){
+			Token arOperator = this.lfc.readNextToken();
+			Token rSideArithmetic = this.lfc.readNextToken();
+			b.writeAll(this.getCodeForIdentifeerOrNumber(rSideArithmetic, false));
+			b.write1Byte(this.getOperationFromArithemticOperatorToken(arOperator));
+		}
 		b.writeAll(this.getCodeForIdentifeerOrNumber(rightSide, false));
 		b.write1Byte(this.getOperationFromOperatorToken(operator));
 		return b;
@@ -71,9 +87,14 @@ public class CoditionExpression implements Expression{
 			if(this.lfc.lookAhead().getToken() == this.tokens.DOT){
 				this.lfc.readNextToken();
 				b.writeAll(this.getPositionOfReference(t));
+			}if(this.lfc.lookAhead().getToken() == this.tokens.ROUND_BRACKET_OPEN){
+				this.lfc.readNextToken();
+				b.writeAll(this.getCodeForMethodCall(t));
+			}else if(this.lfc.lookAhead().getToken() == this.tokens.SQUARE_BRACKET_OPEN){
+				this.lfc.readNextToken();
+				b.writeAll(this.getCodeForArray(t));
 			}else{
 				int position = this.fieldsMap.get(this.method.getFieldByName(t.getText()));
-				
 				if((position>=0) && (position<=3)){
 					b.write1Byte(this.operations.getILOADbyNumber(position));
 					if(negative){
@@ -103,6 +124,53 @@ public class CoditionExpression implements Expression{
 		return b;
 	}
 	
+	public ByteWriter getCodeForMethodCall(Token t) {
+		ByteWriter b = new ByteWriter();
+		ParameterList p = new ParameterList();
+		while(this.lfc.lookAhead().getToken() != this.tokens.ROUND_BRACKET_CLOSE){
+			Token t1 = this.lfc.readNextToken();
+			if(t1.getToken() == this.tokens.IDENTIFIER){
+				
+				Field f1 = this.method.findFieldInsideMethoAndClassAndScope(t1.getText());
+				if(f1.getType().isArray()){
+					/*if(this.lfc.lookAhead().getToken() != this.tokens.SQUARE_BRACKET_OPEN){
+						p.addParameter(f1);
+					}else{
+						
+					}*/
+					p.addParameter(new Field(f1.getType().getBaseType(), "", null, t1));
+					
+				}else{
+					p.addParameter(f1);
+				}
+				b.writeAll(this.getCodeForIdentifeerOrNumber(t1, false));
+				if(this.isNextTokenOperator()){
+					Token arOperator = this.lfc.readNextToken();
+					Token rSideArithmetic = this.lfc.readNextToken();
+					b.writeAll(this.getCodeForIdentifeerOrNumber(rSideArithmetic, false));
+					b.write1Byte(this.getOperationFromArithemticOperatorToken(arOperator));
+				}
+			}else{
+				p.addParameter(new Field(new Type(new Token(this.tokens.INT)), "", null, t1));
+				b.writeAll(this.getCodeForIdentifeerOrNumber(t1, false));
+			}
+		}
+		this.lfc.readNextToken();
+		Method m = this.method.getClazz().getMethoddFromClassMethodReferenceByName(t.getText(),p);
+		ByteWriter b1 = new ByteWriter();
+		
+		if(m.getClazz().equals(this.method.getClazz())){
+			b1.write1Byte(this.operations.ALOAD_0);
+			b1.writeAll(b);
+			b1.write1Byte(this.operations.INVOKESPECIAL);
+		}else{
+			b1.writeAll(b);
+			b1.write1Byte(this.operations.INVOKESTATIC);
+		}
+		b1.write2Byte(this.method.getClazz().getMethodIntMap().get(m));
+		return b1;
+	}
+
 	private ByteWriter getPositionOfReference(Token t) {
 		ByteWriter b = new ByteWriter();
 		Token refToken = this.lfc.readNextToken();
@@ -136,6 +204,62 @@ public class CoditionExpression implements Expression{
 			b.write1Byte(this.operations.GETFIELD);
 			b.write2Byte(this.method.getClazz().getFieldIntMap().get(fieldRef));
 		}
+		
+		return b;
+	}
+	
+	private ByteWriter getCodeForArray(Token t) {
+		ByteWriter b = new ByteWriter();
+		Field classRef = this.method.getFieldByName(t.getText());
+		Token lenght = this.lfc.readNextToken();
+		b.writeAll(this.getALoadCodeForRefereceClass(classRef));
+		if(method.isContainingFildMethodAndClassAndLoops(lenght.getText(), false)){
+			Field f = method.findFieldInsideMethoAndClassAndScope(lenght.getText());
+			int mapPostition = method.getFieldMap().get(f);
+			if((mapPostition>=0) && (mapPostition<=3)){
+				b.write1Byte(this.operations.getILOADbyNumber(mapPostition));
+			}else{
+				b.write1Byte(this.operations.ILOAD);
+				b.write1Byte(mapPostition);
+			}
+		}else{
+			int number =  Integer.parseInt(lenght.getText());
+			b.writeAll(this.getCodeForPushNumber(number));
+			
+		}
+		b.write1Byte(this.operations.IALOAD);
+		this.lfc.readNextToken();
+		/*Token refToken = this.lfc.readNextToken();
+		Field fieldRef = this.method.getClazz().getFieldFromFieldRef(refToken.getText());
+		Field classRef = this.method.getFieldByName(t.getText());
+		if(fieldRef.getType().isArray()){
+			this.lfc.readNextToken();
+			Token identifierOrNumber = this.lfc.readNextToken();
+			b.writeAll(this.getALoadCodeForRefereceClass(classRef));
+			b.write1Byte(this.operations.GETFIELD);
+			b.write2Byte(this.method.getClazz().getFieldIntMap().get(fieldRef));
+			if(method.isContainingFildMethodAndClassAndLoops(identifierOrNumber.getText(), false)){
+				Field f = method.findFieldInsideMethoAndClassAndScope(identifierOrNumber.getText());
+				int mapPostition = method.getFieldMap().get(f);
+				if((mapPostition>=0) && (mapPostition<=3)){
+					b.write1Byte(this.operations.getILOADbyNumber(mapPostition));
+				}else{
+					b.write1Byte(this.operations.ILOAD);
+					b.write1Byte(mapPostition);
+				}
+			}else{
+				int number =  Integer.parseInt(identifierOrNumber.getText());
+				b.writeAll(this.getCodeForPushNumber(number));
+				
+			}
+			b.write1Byte(this.operations.IALOAD);
+			this.lfc.readNextToken();
+			
+		}else{
+			b.writeAll(this.getALoadCodeForRefereceClass(classRef));
+			b.write1Byte(this.operations.GETFIELD);
+			b.write2Byte(this.method.getClazz().getFieldIntMap().get(fieldRef));
+		}*/
 		
 		return b;
 	}

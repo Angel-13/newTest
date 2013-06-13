@@ -79,4 +79,5 @@ public class Token
 	public Position getTokenPosition(){
 		return this.pos;
 	}
+	
 }

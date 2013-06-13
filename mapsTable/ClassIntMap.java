@@ -9,7 +9,7 @@ public class ClassIntMap {
 	private final HashMap<Class, Integer> map = new HashMap<Class, Integer>();
 
 	@M
-	public boolean containsKey(Object key)
+	public boolean containsKey(Class key)
 	{
 		return this.map.containsKey(key);
 	}
@@ -24,6 +24,11 @@ public class ClassIntMap {
 	public Integer put(Class key, Integer value)
 	{
 		return this.map.put(key, value);
+	}
+	
+	public boolean containsValue(Integer key)
+	{
+		return this.map.containsValue(key);
 	}
 	
 	public int size(){

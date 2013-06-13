@@ -322,7 +322,7 @@ public class Method {
 	public String printParameters(){
 		String str = "";
 		for(int i = 0; i <this.pList.getSize(); i++){
-			str = str + "Name: " + this.pList.getParameter(i).getName() + ", Type: " + this.pList.getParameter(i).getType().toString() + "\n";
+			str = str + "Name:" + this.pList.getParameter(i).getName() + ", Type:" + this.pList.getParameter(i).getType().toString() + "\n";
 		}
 		System.out.println(str);
 		return str;

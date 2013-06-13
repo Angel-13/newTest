@@ -10,7 +10,6 @@ public class MethodIntMap {
 	{
 		return this.map.get(key);
 	}
-
 	
 	public Integer put(Method key, Integer value)
 	{
@@ -18,12 +17,22 @@ public class MethodIntMap {
 	}
 
 	
-	public boolean containsKey(Object key)
+	public boolean containsKey(Method key)
 	{
 		return this.map.containsKey(key);
 	}
 	
+	public boolean containsValue(Integer key)
+	{
+		return this.map.containsValue(key);
+	}
+	
 	public int size(){
 		return this.map.size();
+	}
+	
+	public String toString()
+	{
+		return this.map.toString();
 	}
 }

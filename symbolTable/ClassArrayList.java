@@ -31,5 +31,9 @@ public class ClassArrayList {
 	{
 		return this.array.indexOf(c);
 	}
+	
+	public void clear(){
+		this.array.clear();
+	}
 
 }

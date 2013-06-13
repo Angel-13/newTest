@@ -6,15 +6,13 @@ import java.io.OutputStream;
 
 import symbolTable.Class;
 import symbolTable.Field;
-import symbolTable.FieldArrayList;
 import symbolTable.Method;
 import symbolTable.MethodArrayList;
+import symbolTable.ParameterList;
 
 public class ClassFile {
 	
 	private final Class clazz;
-	
-	private final String name;
 	
 	private ByteWriter code;
 	
@@ -25,7 +23,6 @@ public class ClassFile {
 	
 	public ClassFile(Class clazz, String name){
 		this.clazz = clazz;
-		this.name = name;
 		this.code = new ByteWriter();
 		this.cp = new ConstantPool(this.clazz);
 		this.operations = new Operations();
@@ -64,37 +61,32 @@ public class ClassFile {
 	}
 
 	public void make() {
-		//this.cp
-		this.cp.addMethodMap(this.clazz.getMethods().get(0));
-		
-		for(int i = 0; i<this.clazz.getClassReferences().size(); i++){
-			
-			this.cp.addClassMap(this.clazz.getClassReferences().get(i));
-			this.cp.addMethodMap(this.clazz.getClassReferences().get(i).getMethoddFromClassMethodsByName("<init>"));
+		int i = 1;
+		while(this.clazz.isNumberMapped(i)){
+			if(this.clazz.isNumberMappedToField(i)){
+				this.cp.addField(this.clazz.getFieldMappedToValue(i));
+			}else if(this.clazz.isNumberMappedToClass(i)){
+				this.cp.addClassMap(this.clazz.getClassMappedToValue(i));
+			}else if(this.clazz.isNumberMappedToMethod(i)){
+				this.cp.addMethodMap(this.clazz.getMethodMappedToValue(i));
+			}else{
+				this.cp.addStringMap(this.clazz.getStringdMappedToValue(i));
+			}
+			i++;
 		}
-		
-		for(int i = 0; i<this.clazz.getFieldReferences().size(); i++){
-			this.cp.addField(this.clazz.getFieldReferences().get(i));
-		}
-		
-		
 		this.cp.addClassMap(this.clazz);
 		this.cp.addClassMap(this.clazz.getSuperClass());
-		
 		if(!this.clazz.getFields().isEmpty()){
 			this.makeFieldsUtf8();
-		
-			
 		}
 		this.makeCostantUTF8();
-		
 		this.cp.makeByteWriter();
-		
 		this.code.write2Byte(this.cp.getSize());
 		//Create Constant pool table
 		this.code.writeAll(this.cp.getByteWriter());
 		//Writing the class access flags
 		this.writeAccessFlags();
+		this.code.printByteArray();
 		//Writing this class to the byte code output
 		this.code.write2Byte(this.cp.getClassMap().get(this.clazz));
 		//Writing the super class to the byte code output
@@ -132,7 +124,6 @@ public class ClassFile {
 
 	private void makeFieldCode() {
 		for(int i = 0; i<this.clazz.getFields().size(); i++){
-			//System.out.println("TUKA SUM");
 			Field f = this.clazz.getFields().get(i);
 			this.writeFieldsAccessFlags(f);
 			this.code.write2Byte(this.cp.getUtf8Map().get(f.getName()));
@@ -148,40 +139,77 @@ public class ClassFile {
 		if(this.checkStackMapTable()){
 			this.cp.addUtf8("StackMapTable");
 		}
+		
 		this.cp.addUtf8("SourceFile");
 		this.cp.addUtf8(this.clazz.getName() + ".java");
 		this.addNameAndType();
 		this.cp.addUtf8(this.clazz.getName());
 		this.cp.addUtf8(this.clazz.getSuperClass().getName());
 		this.addUtf8FieldRef();
+		//System.out.println(this.cp.getCounter() + " AFTER EVERYTHING ");    /*****************************************************************************************/
 		
 	}
 	
 
 	private void addUtf8FieldRef() {
-		for(int i = 0; i < this.clazz.getFieldReferences().size(); i++){
-			if(!this.cp.getUtf8Map().containsKey(this.clazz.getFieldReferences().get(i).getName())){
-				this.cp.addUtf8(this.clazz.getFieldReferences().get(i).getName());
+		int i = 1;
+		while(this.clazz.isNumberMapped(i)){
+			if(this.clazz.isNumberMappedToField(i)){
+				Field f = this.clazz.getFieldMappedToValue(i);
+				this.addingToUtf8AllNames(f.getClazz().getName());
+				this.addingToUtf8AllNames(f.getName());
+				this.addingToUtf8AllNames(f.getType().getDescriptor());
+				this.addingToUtf8AllNames(f.getType().toString());
+			}else if(this.clazz.isNumberMappedToClass(i)){
+				Class c = this.clazz.getClassMappedToValue(i);
+				this.addingToUtf8AllNames(c.getName());
+			}else if(this.clazz.isNumberMappedToMethod(i)){
+				Method m = this.clazz.getMethodMappedToValue(i);
+				this.addingToUtf8AllNames(m.getClazz().getName());
+				this.addingToUtf8AllNames(m.getName());
+				String s = this.parameterDescriptor(m);
+				this.addingToUtf8AllNames(s);
+			}else{
+				String str = this.clazz.getStringdMappedToValue(i);
+				this.addingToUtf8AllNames(str);
 			}
-			if(!this.cp.getUtf8Map().containsKey(this.clazz.getFieldReferences().get(i).getType().getDescriptor())){
-				this.cp.addUtf8(this.clazz.getFieldReferences().get(i).getType().getDescriptor());
-			}
-			
+			i++;
 		}
-		
 	}
 
+	private void addingToUtf8AllNames(String name){
+		if(!this.cp.getUtf8Map().containsKey(name)){
+			this.cp.addUtf8(name);
+		}
+	}
+	
 	private void addNameAndType() {
-		int counter = 0;
-		this.cp.addUtf8("NameAndType");
-		counter++;
 		for(int i = 0; i < this.clazz.getClassReferences().size(); i++){
 			this.cp.addUtf8(this.clazz.getClassReferences().get(i).getName());
 		}
 		
 		for(int i = 0; i < this.clazz.getFieldReferences().size(); i++){
-			this.cp.addUtf8("NameAndType"+counter);
-			counter++;
+			//System.out.println("NameAndType: " + this.clazz.getFieldReferences().get(i).getName()  + "  FIELDS");
+			if(!this.cp.getClassMap().containsKey(this.clazz.getFieldReferences().get(i).getClazz())){
+				//System.out.println("Class: " +this.clazz.getFieldReferences().get(i).getClazz().getName() + "  FIELDS");
+				this.cp.addClassMap(this.clazz.getFieldReferences().get(i).getClazz());
+			}
+			this.cp.addUtf8("NameAndType:" + this.clazz.getFieldReferences().get(i).getName());
+		}
+		
+		for(int i = 0; i < this.clazz.getMethodReferences().size(); i++){
+			//System.out.println(this.clazz.getMethodReferences().get(i).getName());
+			//System.out.println("NameAndType: " + this.clazz.getMethodReferences().get(i).getName() + "  METHODS");
+			if(!this.cp.getClassMap().containsKey(this.clazz.getMethodReferences().get(i).getClazz())){
+				//System.out.println("Class: " +this.clazz.getMethodReferences().get(i).getClazz().getName()+ "  METHODS");
+				this.cp.addClassMap(this.clazz.getMethodReferences().get(i).getClazz());
+			}
+			this.cp.addUtf8("NameAndType:"+this.clazz.getMethodReferences().get(i).getName());
+		}
+		
+		for(int i = 0; i < this.clazz.getStringReferences().size(); i++){
+			//System.out.println(this.clazz.getStringReferences().get(i));
+			this.cp.addUtf8(this.clazz.getStringReferences().get(i));
 		}
 	}
 
@@ -305,14 +333,24 @@ public class ClassFile {
 				this.cp.addUtf8("()" + m.get(i).getRetrunType().getDescriptor());
 			}else{
 				String str = this.getUtf8ParameterString(m.get(i));
-				this.cp.addUtf8(str);
-				
+				if(!this.cp.getUtf8Map().containsKey(str)){
+					this.cp.addUtf8(str);
+				}
 			}
 			
 		}
 	}
 
 	private String getUtf8ParameterString(Method method) {
+		String str = "(";
+		for(int i = 0; i < method.getParameterList().getSize(); i++){
+			str = str + method.getParameterList().getParameter(i).getType().getDescriptor();
+		}
+		str = str + ")" + method.getRetrunType().getDescriptor();
+		return str;
+	}
+	
+	private String parameterDescriptor(Method method) {
 		String str = "(";
 		for(int i = 0; i < method.getParameterList().getSize(); i++){
 			str = str + method.getParameterList().getParameter(i).getType().getDescriptor();

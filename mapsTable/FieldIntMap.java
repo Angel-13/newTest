@@ -17,9 +17,14 @@ public class FieldIntMap {
 		return this.map.put(key, value);
 	}
 
-	public boolean containsKey(Object key)
+	public boolean containsKey(Field key)
 	{
 		return this.map.containsKey(key);
+	}
+	
+	public boolean containsValue(Integer key)
+	{
+		return this.map.containsValue(key);
 	}
 	
 	public int size(){

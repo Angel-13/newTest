@@ -155,39 +155,36 @@ public class Type
 		//System.out.println(t.getText());
 		this.tokens = new Tokens();
 //TODO make a real class object not only by name
-		boolean isClass = false;
-		
 		if (t.getToken() == this.tokens.BOOLEAN)
 			this.type = this.BOOLEAN;
 		else if (t.getToken() == this.tokens.CHAR)
 			this.type = this.CHAR;
 		else if (t.getToken() == this.tokens.INT)
 			this.type = this.INT;
+		else if (t.getToken() == this.tokens.NUMBER)
+			this.type = this.INT;
 		else if (t.getToken() == this.tokens.NULL)
 			this.type = this.NULL;
 		else if(t.getToken() == this.tokens.IDENTIFIER){
-			if(t.getText().equals("void")){
-				this.type = this.VOID;
-			}else{
-				
-				isClass = true;
 				this.type = this.CLASS;
-			}
 		}else if(t.getToken() == this.tokens.VOID){
 			this.type = this.VOID;
+		}else if(t.getToken() == this.tokens.STRING_LITERAL){
+			this.type = this.STRING;
 		}else{
 			this.type = -1;
 		}
 		this.arrayType = null;
-		if(isClass){
-			if(t.getText().equals("String")){
-				this.clazz = new Class("java/lang/String", null, "");
-			}else{
-				this.clazz = new Class(t.getText(), null, "");
-			}
+		
+		if(this.isClass()){
+			this.clazz = new Class(t.getText(), null, "");
+		}else if(this.isString()){
+			this.clazz = new Class("java/lang/String", new Class("java/lang/Object", null, "java/lang/"), "java/lang/String","java/lang/");	
 		}else{
 			this.clazz = null;
 		}
+		
+		
 		return;
 	}
 
@@ -260,7 +257,7 @@ public class Type
 		return this.type == this.BOOLEAN;
 	}
 
-	public boolean isString()
+	/*public boolean isString()
 	{
 		if (this.type == this.STRING)
 			return true;
@@ -268,12 +265,17 @@ public class Type
 			return false;
 		String string = this.getClazz().toString();
 		return string.equals("java.lang.String");
-	}
+	}*/
 
 
 	public boolean isClass()
 	{
 		return this.type == this.CLASS;
+	}
+	
+	public boolean isString()
+	{
+		return this.type == this.STRING;
 	}
 
  
@@ -328,6 +330,9 @@ public class Type
 			return "L" + this.getClazz().getName()+ ";";
 		if (this.isArray()){
 			return "[" + this.getBaseType().getDescriptor();
+		}
+		if (this.isString()){
+			return "L" + this.getClazz().getName()+ ";";
 		}
 		return " ";
 	}

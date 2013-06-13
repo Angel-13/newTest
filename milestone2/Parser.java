@@ -40,10 +40,12 @@ public class Parser {
 	
 	private final ClassFile classfile;
 	
+	private int startPos;
+	
 	public Parser(String filePath) throws Exception{
 		this.errors = new ErrorsClass();
 		this.lfc = new LookForwardScanner(new Scanner(new LookForwardReader(new FileReader(new File(filePath)))));
-		
+		this.startPos = -1;
 		this.fileName = new File(filePath).getName();
 		this.fileDirPath = new File(filePath).getParent() + "/";
 		this.error = false;
@@ -91,6 +93,14 @@ public class Parser {
 		}else{
 			this.classfile = null;
 		}
+
+		//System.out.println(clazz.getMethodsToBeCheckedIfExists().size()+ " SIZE");
+		/*for(int i=0; i< clazz.getMethodsToBeCheckedIfExists().size(); i++){
+			System.out.print(clazz.getMethodsToBeCheckedIfExists().get(i).getName());
+			for(int j=0; j< clazz.getMethodsToBeCheckedIfExists().get(i).getParameterList().getSize(); j++){
+				System.out.println(",  Parameters : " + clazz.getMethodsToBeCheckedIfExists().get(i).getParameterList().getParameter(j).getType().getDescriptor());
+			}
+		}*/
 		//this.classfile = null;
 	}
 
@@ -434,6 +444,7 @@ public class Parser {
 									}else{
 										this.checkIfFileOrClassExists(type);
 										this.clazz.addClassMethod(m);
+										clazz.isAllreadyContainingMethodInMethodsToBeChecked(m);
 										return m;
 									}
 								}
@@ -653,26 +664,40 @@ public class Parser {
 						b = false;
 					}
 				}else{
-					Token name = this.expected(new Token(this.tks.IDENTIFIER, "Identifier"));
-					name = this.lfc.readNextToken();
+					this.expected(new Token(this.tks.IDENTIFIER, "Identifier"));
+					this.lfc.readNextToken();
 					this.expected(new Token(this.tks.SEMICOLON, ";"));
 					b=false;
 					break;
 				}
 			}else if(this.isNextToken(new Token(this.tks.IF))){
+				int start = 0;
+				if(this.startPos == -1){
+					start = m.getStartOfLoopPosition() + 1;
+				}else{
+					start = m.getStartOfLoopPosition() - this.startPos;
+				}
 				this.expected(new Token(this.tks.IF));
-				int start = m.getStartOfLoopPosition();
-				//System.out.println(start);
-				IfParser ifparser = new IfParser(m, this, 0);
+				IfParser ifparser = new IfParser(m, this, start);
 				m.setIfParser(ifparser);
 				b = ifparser.parse();
 				if(!b){
 					break;
 				}
 				m.addEpressions(ifparser.getExpressions());
+				this.startPos = m.getStartOfLoopPosition();
 			}else if(this.isNextToken(new Token(this.tks.WHILE))){
+				
+				int start = 0;
+				if(this.startPos == -1){
+					start = m.getStartOfLoopPosition();
+				}else{
+					start = m.getStartOfLoopPosition() - this.startPos;
+					if(start != 0){
+						start = start-1;
+					}
+				}
 				this.expected(new Token(this.tks.WHILE));
-				int start = m.getStartOfLoopPosition();
 				LoopParser loopparser = new LoopParser(m, this, start);
 				m.setLoopParser(loopparser);
 				b = loopparser.parse();
@@ -680,20 +705,17 @@ public class Parser {
 					break;
 				}
 				m.addEpressions(loopparser.getExpressions());
+				this.startPos = m.getStartOfLoopPosition();
 			}else if(this.isNextToken(new Token(this.tks.RETURN))){
 				b = this.checkReturnTypeValidation(m);
 				if(!b){
 					break;
 				}
-				//Token t = this.lfc.readNextToken();
 				Token semicolon = this.expected(new Token(this.tks.SEMICOLON, ";"));
 				if(!this.iskCorrectToken(semicolon)){
 					b=false;
 					break;
 				}
-				//m.makeItFinishTheByteCodeForMethod(t);
-
-				//m.getByteWriter().printByteArray();
 			}else{
 				Token err = this.lfc.readNextToken();
 				this.errors.printMethodBodyError(err);
@@ -704,6 +726,7 @@ public class Parser {
 			
 		}
 		if(b){
+
 			
 			Token err = this.expected(new Token(this.tks.CURLY_BRACKET_CLOSE, "}"));
 			if(b && !this.iskCorrectToken(err)){
@@ -721,7 +744,6 @@ public class Parser {
 			}
 		}
 		//m.printStackFrameFieldCounter();
-/*****************************************************************************************************************************************************************************/
 		/*if(!this.error){
 			m.makeByteWriter();
 			m.getByteWriter().printByteArray();
@@ -895,7 +917,7 @@ public class Parser {
 			if(!this.clazz.isAllreadyContainingClass(type.getText())){
 				if(type.getText().equals("String")){
 					//TODO read the parent class from class file
-					this.clazz.addUsedClasses(new Class(type.getText(), null, "java/lang/String", "java/lang/String"));
+					this.clazz.addUsedClasses(new Class("java/lang/String", null, "java/lang/String", "java/lang/"));//type.getText(), null, "java/lang/String", "java/lang/String"));
 				}else{
 					if(!this.checkFile(this.clazz.getFilePath()  + type.getText() + ".java")){
 						this.errors.printFileDoesNotExists(type, type.getText());

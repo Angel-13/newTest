@@ -1,14 +1,22 @@
-public class Test{
-	@M
-	public static int milestone_4(String[] args){
-		int a;
-		Milestone4 m  = new Milestone4();
-		a = 5;
-		m.arr = new int[3];
-		m.arr[1] = 4;
-		m.g = 7;
-		m.f = 9;
-		m.arr[0] = a + (a - m.arr[1] * m.f - a/m.g*(12-11));
-		return m.arr[0];
+import milestone2.Parser;
+
+/************************************************************
+* @author: Angel Mirkovski m/n:0422200
+* @author: Fabian Winkler  m/n:0821409
+*
+* 
+*
+************************************************************/
+
+
+public class Test {
+	public static void main(String[] args){
+		
+		try {
+			Parser p = new Parser("C:\\Users\\User\\Desktop\\Compiler Tests\\CompileWithStyle\\Milestone6.java");//C:\\Users\\User\\workspace\\Compiler_neu\\src\\milestone2\\Atest.java");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 	}
 }

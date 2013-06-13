@@ -30,11 +30,9 @@ public class ArithmeticExpression implements Expression{
 	
 	private final Field classReference;
 	
-	private int position;
+	private Token position;
 	
-	private final String expression;
-	
-	public ArithmeticExpression(Class clazz,FieldIntMap fieldMap, Method m, LookForwardScanner lfc, Field field, int position, Field classReference, String expression){
+	public ArithmeticExpression(Class clazz,FieldIntMap fieldMap, Method m, LookForwardScanner lfc, Field field, Token position, Field classReference, String expression){
 		this.clazz = clazz;
 		this.method = m;
 		this.code = new ByteWriter();
@@ -45,7 +43,6 @@ public class ArithmeticExpression implements Expression{
 		this.field = field;
 		this.position = position;
 		this.classReference = classReference;
-		this.expression = expression;
 	}
 	
 	public ArithmeticExpression(LookForwardScanner lfc, FieldIntMap fieldMap, Method m, Field classReference, String expression){
@@ -57,9 +54,21 @@ public class ArithmeticExpression implements Expression{
 		this.fieldsMap = fieldMap;
 		this.lfc = lfc;
 		this.field = null;
-		this.position = -1;
+		this.position = new Token(-1);
 		this.classReference = classReference;
-		this.expression = expression;
+	}
+	
+	public ArithmeticExpression(Method m){
+		this.clazz = null;
+		this.method = m;
+		this.code = new ByteWriter();
+		this.operations = new Operations();
+		this.tokens = new Tokens();
+		this.fieldsMap = this.method.getFieldMap();
+		this.lfc = null;
+		this.field = null;
+		this.position = new Token(-1);
+		this.classReference = null;
 	}
 	
 	public void make(boolean isRef){
@@ -91,7 +100,8 @@ public class ArithmeticExpression implements Expression{
 		if(this.field.getType().isArray()){
 			this.code.write1Byte(this.operations.GETFIELD);
 			this.code.write2Byte(this.clazz.getFieldIntMap().get(this.field));
-			this.code.writeAll(this.getCodeForPushNumber(this.position));
+			//int number = Integer.parseInt(this.position.getText());
+			this.code.writeAll(this.getCodeForIdentifeerOrNumber(this.position,false));
 		}
 		this.code.writeAll(this.getCode());
 		if(this.field.getType().isArray()){
@@ -107,13 +117,28 @@ public class ArithmeticExpression implements Expression{
 		if(this.field.getType().isArray()){
 			this.code.write1Byte(this.operations.GETFIELD);
 			this.code.write2Byte(this.clazz.getFieldIntMap().get(this.field));
-			this.code.writeAll(this.getCodeForPushNumber(this.position));
+			//int number = Integer.parseInt(this.position.getText());
+			this.code.writeAll(this.getCodeForIdentifeerOrNumber(this.position,false));
 			this.code.write1Byte(this.operations.IALOAD);
 		}else{
 			this.code.write1Byte(this.operations.GETFIELD);
 			this.code.write2Byte(this.clazz.getFieldIntMap().get(this.field));
 		}
 		this.code.write1Byte(this.operations.IRETURN);
+	}
+	
+	public void makeCodeForSimpleRetrun(Field fl, Field f2){
+		if(fl == null){
+			this.code.write1Byte(this.operations.RETURN);
+		}else if(fl.getType().isArray()){
+			this.code.writeAll(this.getALoadCodeForRefereceClass(fl));
+			this.code.writeAll(this.getCodeForIdentifeerOrNumber(f2.getToken(), false));
+			this.code.write1Byte(this.operations.IALOAD);
+			this.code.write1Byte(this.operations.IRETURN);
+		}else{
+			this.code.writeAll(this.getCodeForIdentifeerOrNumber(fl.getToken(), false));
+			this.code.write1Byte(this.operations.IRETURN);
+		}
 	}
 	
 	@Override
@@ -234,6 +259,8 @@ public class ArithmeticExpression implements Expression{
 	
 	public ByteWriter getCodeForIdentifeerOrNumber(Token t, boolean negative){
 		ByteWriter b = new ByteWriter();
+
+		
 		if(t.getToken() == this.tokens.IDENTIFIER){
 			if(this.lfc.lookAhead().getToken() == this.tokens.DOT){
 				this.lfc.readNextToken();
@@ -258,14 +285,18 @@ public class ArithmeticExpression implements Expression{
 			}else{
 				number = Integer.parseInt(t.getText());
 			}
-			if(!this.classReference.getType().isArray() && !this.classReference.getType().isClass()){
-				this.classReference.setValue(number);
+			if(this.classReference != null){
+				if(!this.classReference.getType().isArray() && !this.classReference.getType().isClass()){
+					this.classReference.setValue(number);
+				}
 			}
 			//TODO Make it functional for other expressions
-			if(this.isNextTokenOperator()){
-				Token op = this.lfc.readNextToken();
-				int number1 = Integer.parseInt(this.lfc.readNextToken().getText());
-				number = this.operate(op, number, number1);
+			if(this.lfc != null){
+				if(this.isNextTokenOperator() && (this.lfc.lookAhead().getToken() == this.tokens.NUMBER)){
+					Token op = this.lfc.readNextToken();
+					int number1 = Integer.parseInt(this.lfc.readNextToken().getText());
+					number = this.operate(op, number, number1);
+				}
 			}
 			
 			
@@ -273,8 +304,13 @@ public class ArithmeticExpression implements Expression{
 				b.write1Byte(this.operations.getICONSTbyNumber(number));
 				
 			}else{
-				b.write1Byte(this.operations.BIPUSH);
-				b.write1Byte(number);
+				if(number > 127){
+					b.write1Byte(this.operations.SIPUSH);
+					b.write2Byte(number);
+				}else{
+					b.write1Byte(this.operations.BIPUSH);
+					b.write1Byte(number);
+				}
 			}
 		}
 		return b;

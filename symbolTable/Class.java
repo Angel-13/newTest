@@ -2,11 +2,17 @@ package symbolTable;
 
 import mapsTable.ClassIntMap;
 import mapsTable.FieldIntMap;
+import mapsTable.MethodIntMap;
+import mapsTable.StringIntMap;
 
 
 public class Class {
 	
 	private final MethodArrayList methods;
+	
+	private final MethodArrayList methodsRef;
+	
+	private final MethodArrayList methodsToBeCheckedIfExists;
 	
 	private final FieldArrayList fields;
 	
@@ -26,13 +32,21 @@ public class Class {
 	
 	private final ClassArrayList classReferences;
 	
+	private final ClassArrayList staticClassReferences;
+	
 	private final FieldArrayList fieldReferences;
+	
+	private final StringArrayList stringReferences;
 	
 	private final ClassIntMap classIntMap;
 	
+	private final StringIntMap stringIntMap;
+	
+	private final MethodIntMap methodIntMap;
+	
 	private final FieldIntMap fieldIntMap;
 	
-	public int counter;
+	private int counter;
 	
 	public Class(String name, Class superClass, String packageName, String filePath){
 		this.importedClasses = new ClassArrayList();
@@ -49,6 +63,12 @@ public class Class {
 		this.fieldReferences = new FieldArrayList();
 		this.fieldIntMap = new FieldIntMap();
 		this.counter = 1;
+		this.methodsToBeCheckedIfExists = new MethodArrayList();
+		this.methodIntMap = new MethodIntMap();
+		this.methodsRef = new MethodArrayList();
+		this.staticClassReferences = new ClassArrayList();
+		this.stringReferences = new StringArrayList();
+		this.stringIntMap = new StringIntMap();
 		this.addInitMethod();
 	}
 
@@ -67,6 +87,12 @@ public class Class {
 		this.fieldReferences = new FieldArrayList();
 		this.fieldIntMap = new FieldIntMap();
 		this.counter = 1;
+		this.methodsToBeCheckedIfExists = new MethodArrayList();
+		this.methodIntMap = new MethodIntMap();
+		this.methodsRef = new MethodArrayList();
+		this.staticClassReferences = new ClassArrayList();
+		this.stringReferences = new StringArrayList();
+		this.stringIntMap = new StringIntMap();
 		this.addInitMethod();
 	}
 
@@ -77,8 +103,9 @@ public class Class {
  *************************************************************************************/
 	private void addInitMethod() {
 		Method m = new Method(null, "<init>", new Type(4), new ParameterList(), this.superClass, false, false);
-		this.counter++;
+		//this.counter++;
 		this.methods.add(m);
+		this.addMethodReference(m);
 	}
 	
 	public String getName(){
@@ -93,6 +120,10 @@ public class Class {
 		return this.methods;
 	}
 	
+	public MethodArrayList getMethodsToBeCheckedIfExists(){
+		return this.methodsToBeCheckedIfExists;
+	}
+	
 	public FieldArrayList getFields(){
 		return this.fields;
 	}
@@ -101,8 +132,20 @@ public class Class {
 		return this.superClass;
 	}
 	
+	public StringArrayList getStringReferences(){
+		return this.stringReferences;
+	}
+	
+	public StringIntMap getStringIntMap(){
+		return this.stringIntMap;
+	}
+	
 	public ClassArrayList getImportedArrayClasses(){
 		return this.importedClasses;
+	}
+	
+	public int getCounter(){
+		return this.counter;
 	}
 	
 	public ClassArrayList getUsedClasses(){
@@ -111,6 +154,10 @@ public class Class {
 	
 	public ClassArrayList getClassReferences(){
 		return this.classReferences;
+	}
+	
+	public ClassArrayList getStaticClassReferences(){
+		return this.staticClassReferences;
 	}
 	
 	public FieldArrayList getFieldReferences(){
@@ -125,9 +172,42 @@ public class Class {
 		return this.fieldIntMap;
 	}
 	
+	public MethodArrayList getMethodReferences(){
+		return this.methodsRef;
+	}
+	
+	public MethodIntMap getMethodIntMap(){
+		return this.methodIntMap;
+	}
+	
+	public void addStrinReference(String str){
+		this.stringReferences.add(str);
+		this.addStringRefInStringIntMap(str);
+	}
+	
 	public void addCassReference(Class classReference){
 		this.classReferences.add(classReference);
 		this.addClassInClassIntMap(classReference);
+	}
+	
+	public void addStaticCassReference(Class classReference){
+		this.staticClassReferences.add(classReference);
+		this.addStaticClassInClassIntMap(classReference);
+	}
+	
+	public void addMethodReference(Method methodReference){
+		this.methodsRef.add(methodReference);
+		this.addMethodRefInMethodIntMap(methodReference);
+	}
+	
+	private void addStringRefInStringIntMap(String str) {
+		this.stringIntMap.put(str, counter);
+		this.counter = this.counter + 1;
+	}
+	
+	private void addMethodRefInMethodIntMap(Method methodReference) {
+		this.methodIntMap.put(methodReference, counter);
+		this.counter = this.counter + 1;
 	}
 	
 	public void addFieldReference(Field fielReference){
@@ -138,6 +218,11 @@ public class Class {
 	private void addClassInClassIntMap(Class classReference) {
 		this.classIntMap.put(classReference, counter);
 		this.counter = this.counter + 2;
+	}
+	
+	private void addStaticClassInClassIntMap(Class classReference) {
+		this.classIntMap.put(classReference, counter);
+		this.counter = this.counter + 1;
 	}
 	
 	private void addFieldInFieldIntMap(Field f) {
@@ -162,6 +247,11 @@ public class Class {
 		//this.classFile.getConstatnPool().addMethodMap(m);
 	}
 	
+	public void addToMethodsToBeCheckedIfExists(Method m){
+		this.methodsToBeCheckedIfExists.add(m);
+		//this.classFile.getConstatnPool().addMethodMap(m);
+	}
+	
 	public void addClassField(Field field){
 		this.fields.add(field);
 		//this.classFile.getConstatnPool().addField(field);
@@ -170,24 +260,15 @@ public class Class {
 	public boolean isAllreadyContainingMethod(Method m1){
 		boolean isEqual = false;
 		for(int i=0; i<this.methods.size();i++){
-			isEqual = true;
 			Method m = this.methods.get(i);
 			if((m.getName().equals(m1.getName())) 
 					&& (m.getParameterList().getSize() == m1.getParameterList().getSize())){
-				for(int j=0; j<m.getParameterList().getSize();j++){
-					if(m.getParameterList().getParameter(j).getType().getType() == m1.getParameterList().getParameter(j).getType().getType()){
-						isEqual = isEqual && true;
-					}else{
-						isEqual = isEqual && false;
-					}
-				}
+				isEqual = this.areParmeterListSame(m.getParameterList(), m1.getParameterList());
 				if(isEqual){
-					return true;
+					return isEqual;
 				}
-				
-			}else{
-				isEqual = false;
 			}
+			isEqual = false;
 		}
 	
 		return isEqual;
@@ -232,6 +313,15 @@ public class Class {
 		return false;
 	}
 	
+	public boolean isAllreadyUsedClass(String name){
+		for(int i=0; i<this.usedClasses.size();i++){
+			if(this.usedClasses.get(i).getName().equals(name)){
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public Field getFieldFromClassFieldsByName(String name){
 		for(int i=0; i< this.fields.size();i++){
 			if(this.fields.get(i).getName().equals(name)){
@@ -241,16 +331,34 @@ public class Class {
 		return null;
 	}
 	
-	public Method getMethoddFromClassMethodsByName(String name){
+	public Method getMethoddFromClassMethodsByName(String name, ParameterList pmList){
 		for(int i=0; i<this.methods.size();i++){
 			Method m = this.methods.get(i);
 			if(m.getName().equals(name)){
-				return m;
+				if(m.getParameterList().getSize() == pmList.getSize()){
+					if(this.areParmeterListSame(m.getParameterList(), pmList)){
+						return m;
+					}
+				}
 			}
 		}
 		return null;
 	}
 	
+	public Method getMethoddFromClassMethodReferenceByName(String name, ParameterList pmList){
+		for(int i=0; i<this.methodsRef.size();i++){
+			
+			Method m = this.methodsRef.get(i);
+			if(m.getName().equals(name)){
+				if(m.getParameterList().getSize() == pmList.getSize()){
+					if(this.areParmeterListSame(m.getParameterList(), pmList)){
+						return m;
+					}
+				}
+			}
+		}
+		return null;
+	}
 	
 	public void printFields(){
 		for(int i = 0;i < this.fields.size(); i++){
@@ -267,7 +375,32 @@ public class Class {
 		this.printMethods();
 		
 	}
-
+	
+	private boolean areParmeterListSame(ParameterList p1, ParameterList p2){
+		boolean isEqual = true;
+		for(int j=0; j < p1.getSize(); j++){
+			//System.out.println(p1.getParameter(j).getType().toString() +"   TO STRING  " + p2.getParameter(j).getType().toString());
+			isEqual = isEqual && this.areSameTypes(p1.getParameter(j).getType(), p2.getParameter(j).getType());
+			/*if(p1.getParameter(j).getType().getType() == p2.getParameter(j).getType().getType()){
+				Type t = p1.getParameter(j).getType();
+				Type t1 = p2.getParameter(j).getType();
+				if(t.isArray()){
+					if(t.getBaseType().getType() == t1.getBaseType().getType()){
+						isEqual = isEqual && true;
+					}else{
+						isEqual = isEqual && false;
+					}
+				}else{
+					isEqual = isEqual && true;
+				}
+			}else{
+				isEqual = isEqual && false;
+			}*/
+		}
+		return isEqual;
+	}
+		
+	
 	private void printMethods() {
 		
 		for(int i=0 ; i<this.methods.size(); i++){
@@ -359,4 +492,146 @@ public class Class {
 		}
 		return null;
 	}
+	
+	public boolean isNumberMappedToMethod(int num){
+		//for(int i = 0; i < this)
+		return this.methodIntMap.containsValue(num);
+	}
+	
+	public boolean isNumberMappedToClass(int num){
+		return this.classIntMap.containsValue(num);
+	}
+
+	public boolean isNumberMappedToField(int num){
+		return this.fieldIntMap.containsValue(num);
+	}
+	
+	public boolean isNumberMappedToString(int num){
+		return this.stringIntMap.containsValue(num);
+	}
+	
+	public boolean isNumberMapped(int num){
+		return this.isNumberMappedToClass(num) || this.isNumberMappedToMethod(num) || this.isNumberMappedToField(num) || this.isNumberMappedToString(num);
+	}
+	
+	public String getStringdMappedToValue(int num){
+		for(int i = 0; i < this.stringReferences.size(); i++){
+			String s = this.stringReferences.get(i);
+			int value = this.stringIntMap.get(s);
+			if(value == num){
+				return s;
+			}
+		}
+		return null;
+	}
+	
+	public Method getMethodMappedToValue(int num){
+		for(int i = 0; i < this.methodsRef.size(); i++){
+			Method m = this.methodsRef.get(i);
+			int value = this.methodIntMap.get(m);
+			if(value == num){
+				return m;
+			}
+		}
+		return null;
+	}
+	
+	public Class getClassMappedToValue(int num){
+		for(int i = 0; i < this.classReferences.size(); i++){
+			Class c = this.classReferences.get(i);
+			int value = this.classIntMap.get(c);
+			if(value == num){
+				return c;
+			}
+		}
+		
+		for(int i = 0; i < this.staticClassReferences.size(); i++){
+			Class c = this.staticClassReferences.get(i);
+			int value = this.classIntMap.get(c);
+			if(value == num){
+				return c;
+			}
+		}
+		return null;
+	}
+
+	public Field getFieldMappedToValue(int num){
+		for(int i = 0; i < this.fieldReferences.size(); i++){
+			Field f = this.fieldReferences.get(i);
+			int value = this.fieldIntMap.get(f);
+			if(value == num){
+				return f;
+			}
+		}
+		return null;
+	}
+	
+	public boolean isAllreadyContainingMethodRef(Method m1){
+		boolean isEqual = false;
+		for(int i=0; i<this.methodsRef.size();i++){
+			Method m = this.methodsRef.get(i);
+			if((m.getName().equals(m1.getName())) 
+					&& (m.getParameterList().getSize() == m1.getParameterList().getSize())){
+				isEqual = this.areParmeterListSame(m.getParameterList(), m1.getParameterList());
+				if(isEqual){
+					return true;
+				}
+			}
+			isEqual = false;
+		}
+	
+		return isEqual;
+	}
+	
+	private boolean areSameTypes(Type t1, Type t2) {
+		if(t1.getType() == t2.getType()){
+			if(t1.isArray()){
+				if(t1.getBaseType().getType() == t2.getBaseType().getType()){
+					return true;
+				}else{
+					return false;
+				}
+			}else{
+				return true;
+			}
+		}else{
+			return false;
+		}
+	}
+	
+	public void printMethodReferences() {
+		String str ="Method Refence Name: ";
+		for(int i=0 ; i<this.methodsRef.size(); i++){
+			str = str + this.methodsRef.get(i).getName();
+			System.out.println(str);
+			str ="Method Refence Name: ";
+		}	
+		//System.out.println(str);
+	}
+	
+	public boolean isAllreadyContainingMethodInMethodsToBeChecked(Method m1){
+		boolean isEqual = false;
+		for(int i=0; i<this.methodsToBeCheckedIfExists.size();i++){
+			Method m = this.methodsToBeCheckedIfExists.get(i);
+			if((m.getName().equals(m1.getName())) 
+					&& (m.getParameterList().getSize() == m1.getParameterList().getSize())){
+				isEqual = this.areParmeterListSame(m.getParameterList(), m1.getParameterList());
+				if(isEqual){
+					this.methodsToBeCheckedIfExists.remove(i);
+					return true;
+				}
+			}
+			isEqual = false;
+		}
+	
+		return isEqual;
+	}
+	
+	/*public String getStringFromStrinArrayListByName(String stri) {
+		for(int i=0 ; i<this.stringReferences.size(); i++){
+			if(this.stringReferences.get(i).equals(anObject))
+		}	
+		return "";
+	}*/
+	
 }

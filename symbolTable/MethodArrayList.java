@@ -35,4 +35,16 @@ public class MethodArrayList
 	{
 		return this.list.toArray();
 	}
+	
+	public void clear(){
+		this.list.clear();
+	}
+	
+	public boolean isEmpty(){
+		return this.list.isEmpty();
+	}
+	
+	public Method remove(int index){
+		return this.list.remove(index);
+	}
 }

@@ -26,6 +26,11 @@ public class StringIntMap {
 		return this.map.toString();
 	}
 	
+	public boolean containsValue(Integer key)
+	{
+		return this.map.containsValue(key);
+	}
+	
 	public int size(){
 		return this.map.size();
 	}
