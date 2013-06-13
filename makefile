@@ -4,7 +4,7 @@ FLAGS = -verbose
 JVP = javap
 MAIN = Test1
 CLASS = ./Milestone6.class
-sources = $(wildcard Test1.java /code/*.java /compileTable/*.java /mapsTable/*.java /milestone2/*.java /scanner/*java /symbolTable/*.java /tokens/*.java)
+sources = $(wildcard *.class Test1.java /code/*.java /compileTable/*.java /mapsTable/*.java /milestone2/*.java /scanner/*java /symbolTable/*.java /tokens/*.java)
 classes = $(sources:.java=.class)
 all: $(classes)
 clean:
@@ -12,4 +12,4 @@ clean:
 %.class: %.java
 	$(JC) $(sources)
 	$(JVM) $(MAIN)
-	$(JVP) $(FLAGS) $Milestone6.class
+	$(JVP) $(FLAGS) Milestone6
