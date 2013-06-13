@@ -33,6 +33,7 @@ public class ClassFile {
 		
 		try {
 			f = new FileOutputStream (this.clazz.getFilePath() + name);
+			System.out.println(this.clazz.getFilePath() + name);
 			this.code.writeTo(f);
 			f.close();
 		} catch (IOException e) {
